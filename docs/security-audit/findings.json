@@ -1,0 +1,69 @@
+{
+  "project": "FitFlow Home",
+  "date": "2026-08-29",
+  "stack": {
+    "language": "TypeScript",
+    "framework": "Next.js 16 App Router + React 19",
+    "backend": "Supabase (Auth, Postgres, RLS) — sem ORM",
+    "auth": "Supabase Auth e-mail/senha, sessão em cookie via @supabase/ssr, getUser()",
+    "frontend": "React 19 + Tailwind CSS 4",
+    "deploy": "Vercel (vercel.json). Sem Docker, CI, Helm ou Terraform. Sem repositório git local."
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "média",
+      "category": "Auth (adjacente)",
+      "file": "Supabase Auth (projeto remoto)",
+      "lines": "—",
+      "title": "Proteção contra senhas vazadas desativada",
+      "description": "O advisor de segurança do Supabase confirma que Leaked Password Protection está off. Usuários podem cadastrar senhas já comprometidas (HaveIBeenPwned).",
+      "exploitable": "Qualquer pessoa no signup ou troca de senha pode usar uma senha vazada conhecida, desde que tenha ≥ 8 caracteres (único check no app).",
+      "condition": "Configuração atual do projeto Auth."
+    },
+    {
+      "id": "F2",
+      "severity": "baixa",
+      "category": "Isolamento / Auth gate",
+      "file": "src/lib/supabase/proxy.ts",
+      "lines": "10–12",
+      "title": "Proxy de sessão falha aberto sem env",
+      "description": "Se NEXT_PUBLIC_SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_ANON_KEY estiverem ausentes, o proxy devolve NextResponse.next() sem checar login.",
+      "exploitable": "Rotas do grupo (app) passam no proxy. Hoje/histórico/perfil ainda chamam requireUser(); /descanso não. Em produção atual as env existem.",
+      "condition": "Deploy ou runtime sem as variáveis públicas do Supabase."
+    },
+    {
+      "id": "F3",
+      "severity": "baixa",
+      "category": "Isolamento / Auth gate",
+      "file": "src/app/(app)/layout.tsx e src/app/(app)/descanso/page.tsx",
+      "lines": "1–18 e 8–47",
+      "title": "Layout autenticado sem requireUser; /descanso sem sessão",
+      "description": "O layout (app) não valida sessão. A página /descanso não chama requireUser. A proteção depende só do proxy.",
+      "exploitable": "Com o fail-open do F2, anônimo acessa /descanso (conteúdo estático, sem PII). Páginas com dados continuam protegidas por requireUser.",
+      "condition": "Combinado com F2, ou página nova no grupo (app) sem requireUser."
+    },
+    {
+      "id": "F4",
+      "severity": "informativa",
+      "category": "Isolamento (defesa em profundidade)",
+      "file": "Postgres ao vivo (grants) / padrão Supabase",
+      "lines": "—",
+      "title": "GRANT amplo de anon/authenticated nas tabelas public",
+      "description": "anon e authenticated têm SELECT/INSERT/UPDATE/DELETE/TRUNCATE em profiles, logs, métricas e catálogo. RLS sem policy para anon bloqueia o acesso hoje.",
+      "exploitable": "Não explorável via PostgREST enquanto RLS estiver ligado e sem policy para anon. Vira crítico se RLS for desligado ou surgir policy permissiva.",
+      "condition": "RLS desabilitado ou policy nova to public/anon."
+    },
+    {
+      "id": "F5",
+      "severity": "informativa",
+      "category": "Isolamento",
+      "file": "supabase/migrations/001_initial.sql",
+      "lines": "66–81",
+      "title": "Função SECURITY DEFINER no schema public",
+      "description": "handle_new_user() é SECURITY DEFINER em public. EXECUTE está só em postgres e service_role (não em anon/authenticated).",
+      "exploitable": "Não chamável pelo cliente autenticado. Risco residual se grants forem ampliados.",
+      "condition": "GRANT EXECUTE a anon/authenticated/public."
+    }
+  ]
+}

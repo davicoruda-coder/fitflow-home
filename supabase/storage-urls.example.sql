@@ -1,0 +1,9 @@
+-- Optional: re-run after uploading files to Storage bucket `exercises`
+-- Example public URL shape:
+-- https://YOUR_PROJECT.supabase.co/storage/v1/object/public/exercises/flexao-apoios.jpg
+--
+-- update public.exercises
+-- set
+--   thumbnail_url = 'https://YOUR_PROJECT.supabase.co/storage/v1/object/public/exercises/flexao-apoios-thumb.jpg',
+--   image_url = 'https://YOUR_PROJECT.supabase.co/storage/v1/object/public/exercises/flexao-apoios.jpg'
+-- where slug = 'flexao-apoios';
