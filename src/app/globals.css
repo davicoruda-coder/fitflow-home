@@ -76,7 +76,7 @@ body {
   text-size-adjust: 100%;
 }
 
-/* Grid pattern only on larger screens — cheaper paint on phones */
+/* Soft glow only on larger screens — skip dense grid (expensive paint on PC) */
 @media (min-width: 1024px) {
   body {
     background-image:
@@ -85,18 +85,7 @@ body {
         700px 420px at 100% 0%,
         color-mix(in srgb, var(--energy) 16%, transparent),
         transparent 50%
-      ),
-      linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--line) 28%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        45deg,
-        color-mix(in srgb, var(--line) 18%, transparent) 1px,
-        transparent 1px
       );
-    background-size: auto, auto, 28px 28px, 28px 28px;
   }
 }
 
@@ -119,14 +108,31 @@ body {
   box-shadow: var(--panel-shadow);
 }
 
+/* Desktop: solid surfaces (no backdrop-blur) — much cheaper paint on large screens */
 @media (min-width: 1024px) {
-  .surface-card {
-    background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
-    backdrop-filter: blur(8px);
+  :root {
+    --motion: 0.16s;
   }
 
+  .surface-card,
   .surface-panel {
-    background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
+    background: var(--bg-elevated);
+    backdrop-filter: none;
+  }
+
+  .animate-fade-up {
+    animation: fade-up-desktop var(--motion) ease-out both;
+  }
+}
+
+@keyframes fade-up-desktop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -248,6 +254,17 @@ a {
     box-shadow var(--motion) ease,
     opacity var(--motion) ease,
     transform var(--motion) ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 0.35rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

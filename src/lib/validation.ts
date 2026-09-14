@@ -1,4 +1,5 @@
 import type { ScheduleMode } from "@/lib/types";
+import { appCalendarDate } from "@/lib/timezone";
 
 export const DISPLAY_NAME_MAX = 40;
 export const PASSWORD_MIN = 8;
@@ -70,12 +71,7 @@ export function validateStartDate(value: string): string | null {
     return "Data de início inválida.";
   }
 
-  const today = new Date();
-  const todayUtc = Date.UTC(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
+  const todayUtc = appCalendarDate().getTime();
   const min = todayUtc - 365 * 86_400_000;
   const max = todayUtc;
   const ms = date.getTime();

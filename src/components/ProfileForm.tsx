@@ -7,6 +7,7 @@ import { updateProfile } from "@/lib/actions";
 import { ErrorBanner } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
+import { ConfirmAction } from "@/components/ConfirmAction";
 import { SCHEDULE_MODES, WEEKDAY_OPTIONS } from "@/lib/day-plan";
 import { DISPLAY_NAME_MAX } from "@/lib/validation";
 import type { Profile, ScheduleMode } from "@/lib/types";
@@ -174,13 +175,15 @@ export function ProfileForm({ profile, email }: Props) {
 
       <ChangePasswordForm email={email} />
 
-      <button
-        type="button"
-        onClick={onLogout}
-        className="min-h-14 rounded-2xl border border-danger/35 bg-elevated px-6 font-semibold text-danger"
-      >
-        Sair
-      </button>
+      <ConfirmAction
+        triggerLabel="Sair"
+        title="Sair da conta?"
+        description="Você vai precisar entrar de novo com e-mail e senha."
+        confirmLabel="Sim, sair"
+        busyLabel="Saindo…"
+        variant="danger"
+        onConfirm={onLogout}
+      />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import {
   getWorkoutExercises,
   requireUser,
 } from "@/lib/data";
-import { splitWarmup } from "@/lib/workout";
+import { splitSession } from "@/lib/workout";
 import type { WorkoutCode } from "@/lib/types";
 
 type Props = {
@@ -31,17 +31,17 @@ export default async function TreinoPage({ params }: Props) {
   if (!workout) {
     return (
       <div className="px-6 py-10">
-        <ErrorBanner message="Treino não encontrado no banco." />
+        <ErrorBanner message="Treino indisponível no momento. Volte para Hoje e tente de novo." />
       </div>
     );
   }
 
   const exercises = await getWorkoutExercises(workout.id);
-  const { circuit } = splitWarmup(exercises);
+  const { circuit } = splitSession(exercises);
   if (circuit.length === 0) {
     return (
       <div className="px-6 py-10">
-        <ErrorBanner message="Este treino ainda não tem exercícios. Rode o seed SQL." />
+        <ErrorBanner message="Este treino ainda não tem exercícios. Volte mais tarde ou escolha outro dia." />
       </div>
     );
   }

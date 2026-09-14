@@ -15,9 +15,11 @@ export default async function HistoricoPage() {
   const { user } = await requireUser();
   if (!user) redirect("/login");
 
-  const profile = await getProfile(user.id);
-  const logs = await getWorkoutLogs(user.id);
-  const metrics = await getBodyMetrics(user.id);
+  const [profile, logs, metrics] = await Promise.all([
+    getProfile(user.id),
+    getWorkoutLogs(user.id),
+    getBodyMetrics(user.id),
+  ]);
 
   if (!profile) {
     return (
@@ -33,62 +35,65 @@ export default async function HistoricoPage() {
   );
 
   return (
-    <div className="px-6 py-8 animate-fade-up">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">
+    <div className="px-6 py-8 animate-fade-up lg:px-0 lg:py-10">
+      <h1 className="font-display text-3xl font-semibold tracking-tight lg:text-4xl">
         Histórico
       </h1>
       <p className="mt-2 text-muted">
-        Ofensiva atual:{" "}
+        Sequência atual:{" "}
         <span className="font-semibold text-accent">{streak}</span>
       </p>
 
-      <BodyMetricsSection metrics={metrics} />
+      <div className="mt-2 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-start lg:gap-12">
+        <BodyMetricsSection metrics={metrics ?? []} loadFailed={metrics === null} />
 
-      <section className="mt-10">
-        <h2 className="font-display text-xl font-semibold">Treinos</h2>
-        <div className="mt-4">
-          {logs.length === 0 ? (
-            <EmptyState
-              title="Nenhum treino ainda"
-              description="Conclua seu primeiro circuito de 15 minutos para ver o histórico aqui."
-            />
-          ) : (
-            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {logs.map((log) => {
-                const date = new Date(log.completed_at);
-                const minutes = Math.round(log.duration_seconds / 60);
-                return (
-                  <li
-                    key={log.id}
-                    className="surface-card rounded-2xl px-4 py-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-semibold">
-                          Treino {log.workout?.code ?? "—"}
-                        </p>
-                        <p className="text-sm text-muted">
-                          {date.toLocaleDateString("pt-BR", {
-                            weekday: "short",
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
+        <section>
+          <h2 className="font-display text-xl font-semibold">Treinos</h2>
+          <div className="mt-4">
+            {logs.length === 0 ? (
+              <EmptyState
+                title="Nenhum treino ainda"
+                description="Conclua seu primeiro circuito de 15 minutos para ver o histórico aqui."
+              />
+            ) : (
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {logs.map((log) => {
+                  const date = new Date(log.completed_at);
+                  const minutes = Math.round(log.duration_seconds / 60);
+                  return (
+                    <li
+                      key={log.id}
+                      className="surface-card rounded-2xl px-4 py-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">
+                            Treino {log.workout?.code ?? "—"}
+                          </p>
+                          <p className="text-sm text-muted">
+                            {date.toLocaleDateString("pt-BR", {
+                              timeZone: "America/Sao_Paulo",
+                              weekday: "short",
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-accent">
+                          ~{minutes} min
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-accent">
-                        ~{minutes} min
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </section>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
 
-      <ResetDataButton />
+          <ResetDataButton />
+        </section>
+      </div>
     </div>
   );
 }

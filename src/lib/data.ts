@@ -7,16 +7,17 @@ import type {
   WorkoutExercise,
   WorkoutLog,
 } from "@/lib/types";
+import { cache } from "react";
 
-export async function requireUser() {
+export const requireUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return { supabase, user };
-}
+});
 
-export async function getProfile(userId: string): Promise<Profile | null> {
+export const getProfile = cache(async (userId: string): Promise<Profile | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
@@ -29,7 +30,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     schedule_mode: data.schedule_mode ?? "alternate",
     schedule_weekdays: data.schedule_weekdays ?? [],
   } as Profile;
-}
+});
 
 export async function getWorkoutByCode(
   code: WorkoutCode,
@@ -58,6 +59,7 @@ export async function getWorkoutExercises(
       target_reps,
       target_seconds,
       is_warmup,
+      is_cooldown,
       exercise:exercises (
         id,
         name,
@@ -79,16 +81,18 @@ export async function getWorkoutExercises(
   return data.map((row) => ({
     ...row,
     is_warmup: Boolean(row.is_warmup),
+    is_cooldown: Boolean(row.is_cooldown),
     exercise: Array.isArray(row.exercise) ? row.exercise[0] : row.exercise,
   })) as WorkoutExercise[];
 }
 
-export async function getWorkoutLogs(userId: string): Promise<WorkoutLog[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("workout_logs")
-    .select(
-      `
+export const getWorkoutLogs = cache(
+  async (userId: string): Promise<WorkoutLog[]> => {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("workout_logs")
+      .select(
+        `
       id,
       user_id,
       workout_id,
@@ -96,31 +100,38 @@ export async function getWorkoutLogs(userId: string): Promise<WorkoutLog[]> {
       duration_seconds,
       workout:workouts ( id, code, title, description )
     `,
-    )
-    .eq("user_id", userId)
-    .order("completed_at", { ascending: false });
+      )
+      .eq("user_id", userId)
+      .order("completed_at", { ascending: false });
 
-  if (!data) return [];
+    if (!data) return [];
 
-  return data.map((row) => ({
-    ...row,
-    workout: Array.isArray(row.workout) ? row.workout[0] : row.workout,
-  })) as WorkoutLog[];
-}
+    return data.map((row) => ({
+      ...row,
+      workout: Array.isArray(row.workout) ? row.workout[0] : row.workout,
+    })) as WorkoutLog[];
+  },
+);
 
-export async function getBodyMetrics(userId: string): Promise<BodyMetric[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("body_metrics")
-    .select("id, user_id, recorded_at, height_cm, weight_kg, created_at")
-    .eq("user_id", userId)
-    .order("recorded_at", { ascending: true });
+export const getBodyMetrics = cache(
+  async (userId: string): Promise<BodyMetric[] | null> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("body_metrics")
+      .select("id, user_id, recorded_at, height_cm, weight_kg, created_at")
+      .eq("user_id", userId)
+      .order("recorded_at", { ascending: true });
 
-  if (!data) return [];
+    // null = load failed — callers must NOT treat as “never registered”
+    if (error) {
+      console.error("getBodyMetrics", error.message);
+      return null;
+    }
 
-  return data.map((row) => ({
-    ...row,
-    height_cm: Number(row.height_cm),
-    weight_kg: Number(row.weight_kg),
-  })) as BodyMetric[];
-}
+    return (data ?? []).map((row) => ({
+      ...row,
+      height_cm: Number(row.height_cm),
+      weight_kg: Number(row.weight_kg),
+    })) as BodyMetric[];
+  },
+);

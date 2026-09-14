@@ -98,60 +98,36 @@ export function AuthHeroBackground() {
   }, []);
 
   return (
-    <>
-      {/* Mobile: no fluxo — mosaico em cima, texto embaixo */}
-      <div
-        className="auth-mosaic-panel pointer-events-none relative -mx-6 w-[calc(100%+3rem)] shrink-0 overflow-hidden lg:hidden"
-        aria-hidden
-      >
-        <MosaicGrid reduceMotion={reduceMotion} />
-        <MosaicFade />
+    <div
+      className="auth-mosaic-panel pointer-events-none relative -mx-6 w-[calc(100%+3rem)] shrink-0 overflow-hidden lg:absolute lg:inset-x-0 lg:top-0 lg:-z-10 lg:mx-0 lg:w-full"
+      aria-hidden
+    >
+      <div className="auth-mosaic-media grid grid-cols-2 grid-rows-2 gap-0">
+        {TILES.map((tile, i) => (
+          <MosaicTile
+            key={tile.src}
+            tile={tile}
+            reduceMotion={reduceMotion}
+            priority={i < 2}
+          />
+        ))}
       </div>
-
-      {/* Desktop: overlay no fluxo do layout */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 hidden overflow-hidden lg:block lg:auth-mosaic-panel"
-        aria-hidden
-      >
-        <MosaicGrid reduceMotion={reduceMotion} />
-        <MosaicFade />
-      </div>
-    </>
-  );
-}
-
-function MosaicGrid({ reduceMotion }: { reduceMotion: boolean }) {
-  return (
-    <div className="auth-mosaic-media grid grid-cols-2 grid-rows-2 gap-0">
-      {TILES.map((tile, i) => (
-        <MosaicTile
-          key={tile.src}
-          tile={tile}
-          reduceMotion={reduceMotion}
-          priority={i < 2}
+      <div className="auth-mosaic-fade">
+        <div
+          className="absolute inset-x-0 bottom-0 h-3.5 lg:h-16"
+          style={{
+            background:
+              "linear-gradient(180deg, transparent 0%, var(--bg) 100%)",
+          }}
         />
-      ))}
-    </div>
-  );
-}
-
-function MosaicFade() {
-  return (
-    <div className="auth-mosaic-fade">
-      <div
-        className="absolute inset-x-0 bottom-0 h-3.5 lg:h-16"
-        style={{
-          background:
-            "linear-gradient(180deg, transparent 0%, var(--bg) 100%)",
-        }}
-      />
-      <div
-        className="absolute inset-x-0 top-0 h-28"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 100% at 90% 0%, color-mix(in srgb, var(--energy) 28%, transparent), transparent 70%)",
-        }}
-      />
+        <div
+          className="absolute inset-x-0 top-0 h-28"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 100% at 90% 0%, color-mix(in srgb, var(--energy) 28%, transparent), transparent 70%)",
+          }}
+        />
+      </div>
     </div>
   );
 }

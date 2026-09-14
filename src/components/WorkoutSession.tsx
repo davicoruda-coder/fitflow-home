@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseMedia } from "@/components/ExerciseMedia";
+import { ConfirmAction } from "@/components/ConfirmAction";
 import { ErrorBanner } from "@/components/ui";
 import {
   CIRCUIT_ROUNDS,
@@ -10,16 +11,18 @@ import {
   WARMUP_SECONDS,
   WORKOUT_DURATION_SECONDS,
 } from "@/lib/constants";
-import { splitWarmup } from "@/lib/workout";
+import { splitSession } from "@/lib/workout";
 import { saveWorkoutLog } from "@/lib/actions";
 import {
   signalComplete,
   signalExerciseChange,
   signalRestStart,
+  signalTimerDone,
+  unlockAudio,
 } from "@/lib/sounds";
 import type { Workout, WorkoutExercise } from "@/lib/types";
 
-type Phase = "warmup" | "exercise" | "rest" | "done";
+type Phase = "warmup" | "exercise" | "rest" | "cooldown" | "done";
 
 type Props = {
   workout: Workout;
@@ -28,6 +31,7 @@ type Props = {
 
 type SessionInit = {
   circuit: WorkoutExercise[];
+  cooldown: WorkoutExercise[];
   warmupHold: number | null;
 };
 
@@ -35,6 +39,7 @@ type State = {
   phase: Phase;
   round: number;
   exerciseIndex: number;
+  cooldownIndex: number;
   globalLeft: number;
   restLeft: number;
   holdLeft: number | null;
@@ -49,6 +54,8 @@ type Action =
   | { type: "START_REST" }
   | { type: "END_REST"; hold: number | null }
   | { type: "END_WARMUP"; hold: number | null }
+  | { type: "START_COOLDOWN"; hold: number | null; elapsed: number }
+  | { type: "MOVE_COOLDOWN"; index: number; hold: number | null }
   | { type: "FINISH_START"; elapsed: number }
   | { type: "FINISH_OK" }
   | { type: "FINISH_ERROR"; message: string };
@@ -66,6 +73,7 @@ function createInitialState(init: SessionInit): State {
     phase: hasWarmup ? "warmup" : "exercise",
     round: 1,
     exerciseIndex: 0,
+    cooldownIndex: 0,
     globalLeft: WORKOUT_DURATION_SECONDS,
     restLeft: REST_BETWEEN_ROUNDS_SECONDS,
     holdLeft: hasWarmup ? init.warmupHold : holdFor(init.circuit[0]),
@@ -79,7 +87,7 @@ function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "TICK": {
       if (state.phase === "done") return state;
-      if (state.phase === "warmup") {
+      if (state.phase === "warmup" || state.phase === "cooldown") {
         return {
           ...state,
           holdLeft:
@@ -128,6 +136,21 @@ function reducer(state: State, action: Action): State {
         exerciseIndex: 0,
         holdLeft: action.hold,
       };
+    case "START_COOLDOWN":
+      return {
+        ...state,
+        phase: "cooldown",
+        cooldownIndex: 0,
+        holdLeft: action.hold,
+        elapsed: action.elapsed,
+      };
+    case "MOVE_COOLDOWN":
+      return {
+        ...state,
+        phase: "cooldown",
+        cooldownIndex: action.index,
+        holdLeft: action.hold,
+      };
     case "FINISH_START":
       return {
         ...state,
@@ -153,54 +176,97 @@ function formatTime(totalSeconds: number) {
 
 export function WorkoutSession({ workout, exercises }: Props) {
   const router = useRouter();
-  const { warmup, circuit } = useMemo(() => splitWarmup(exercises), [exercises]);
+  const { warmup, circuit, cooldown } = useMemo(
+    () => splitSession(exercises),
+    [exercises],
+  );
   const init = useMemo<SessionInit>(
     () => ({
       circuit,
-      warmupHold: warmup
-        ? holdFor(warmup) ?? WARMUP_SECONDS
-        : null,
+      cooldown,
+      warmupHold: warmup ? (holdFor(warmup) ?? WARMUP_SECONDS) : null,
     }),
-    [circuit, warmup],
+    [circuit, cooldown, warmup],
   );
   const [state, dispatch] = useReducer(reducer, init, createInitialState);
   const startedAtRef = useRef(0);
+  const circuitElapsedRef = useRef(0);
   const finishedRef = useRef(false);
   const restEndingRef = useRef(false);
   const warmupEndingRef = useRef(false);
+  const cooldownEndingRef = useRef(false);
+  const cooldownStartedRef = useRef(false);
+  const holdAlarmRef = useRef(false);
 
   useEffect(() => {
-    if (state.phase === "warmup") return;
+    const unlock = () => unlockAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (state.phase === "warmup" || state.phase === "cooldown") return;
     if (startedAtRef.current === 0) {
       startedAtRef.current = Date.now();
     }
   }, [state.phase]);
 
-  const finish = useCallback(async () => {
-    if (finishedRef.current) return;
-    finishedRef.current = true;
-    signalComplete();
+  const circuitElapsedSeconds = useCallback(() => {
+    if (circuitElapsedRef.current > 0) return circuitElapsedRef.current;
     const start = startedAtRef.current || Date.now();
-    const duration = Math.max(1, Math.round((Date.now() - start) / 1000));
-    dispatch({ type: "FINISH_START", elapsed: duration });
+    return Math.max(1, Math.round((Date.now() - start) / 1000));
+  }, []);
 
-    const result = await saveWorkoutLog({
-      workoutId: workout.id,
-      durationSeconds: duration,
-    });
+  const finish = useCallback(
+    async (elapsedOverride?: number, opts?: { silent?: boolean }) => {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
+      if (!opts?.silent) {
+        signalComplete();
+      }
+      const duration = elapsedOverride ?? circuitElapsedSeconds();
+      dispatch({ type: "FINISH_START", elapsed: duration });
 
-    if (!result.ok) {
-      finishedRef.current = false;
-      dispatch({
-        type: "FINISH_ERROR",
-        message: result.error,
+      const result = await saveWorkoutLog({
+        workoutId: workout.id,
+        durationSeconds: duration,
       });
+
+      if (!result.ok) {
+        finishedRef.current = false;
+        dispatch({
+          type: "FINISH_ERROR",
+          message: result.error,
+        });
+        return;
+      }
+
+      dispatch({ type: "FINISH_OK" });
+      router.refresh();
+    },
+    [circuitElapsedSeconds, router, workout.id],
+  );
+
+  const beginCooldownOrFinish = useCallback(() => {
+    if (cooldownStartedRef.current || finishedRef.current) return;
+    cooldownStartedRef.current = true;
+    const elapsed = circuitElapsedSeconds();
+    circuitElapsedRef.current = elapsed;
+    if (cooldown.length === 0) {
+      void finish(elapsed);
       return;
     }
-
-    dispatch({ type: "FINISH_OK" });
-    router.refresh();
-  }, [router, workout.id]);
+    signalExerciseChange();
+    dispatch({
+      type: "START_COOLDOWN",
+      hold: holdFor(cooldown[0]),
+      elapsed,
+    });
+  }, [circuitElapsedSeconds, cooldown, finish]);
 
   const isDone = state.phase === "done";
 
@@ -212,29 +278,55 @@ export function WorkoutSession({ workout, exercises }: Props) {
     return () => window.clearInterval(id);
   }, [isDone]);
 
-  useEffect(() => {
-    const prefetchUrl =
-      state.phase === "warmup"
-        ? circuit[0]?.exercise.video_url
-        : state.phase === "exercise"
-          ? circuit[state.exerciseIndex + 1]?.exercise.video_url
-          : null;
-    if (!prefetchUrl || typeof document === "undefined") return;
-    const link = document.createElement("link");
-    link.rel = "prefetch";
-    link.as = "video";
-    link.href = prefetchUrl;
-    document.head.appendChild(link);
-    return () => {
-      link.remove();
-    };
-  }, [circuit, state.exerciseIndex, state.phase]);
+  const prefetchUrl = useMemo(() => {
+    if (state.phase === "warmup" || state.phase === "rest") {
+      return circuit[0]?.exercise.video_url ?? null;
+    }
+    if (state.phase === "exercise") {
+      const nextInRound = circuit[state.exerciseIndex + 1];
+      if (nextInRound) return nextInRound.exercise.video_url ?? null;
+      if (state.round >= CIRCUIT_ROUNDS) {
+        return cooldown[0]?.exercise.video_url ?? null;
+      }
+      return circuit[0]?.exercise.video_url ?? null;
+    }
+    if (state.phase === "cooldown") {
+      return cooldown[state.cooldownIndex + 1]?.exercise.video_url ?? null;
+    }
+    return null;
+  }, [
+    circuit,
+    cooldown,
+    state.cooldownIndex,
+    state.exerciseIndex,
+    state.phase,
+    state.round,
+  ]);
 
   useEffect(() => {
-    if (state.phase !== "done" && state.phase !== "warmup" && state.globalLeft === 0) {
-      void finish();
+    if (!prefetchUrl) return;
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.muted = true;
+    video.playsInline = true;
+    video.src = prefetchUrl;
+    video.load();
+    return () => {
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [prefetchUrl]);
+
+  useEffect(() => {
+    if (
+      state.phase !== "done" &&
+      state.phase !== "warmup" &&
+      state.phase !== "cooldown" &&
+      state.globalLeft === 0
+    ) {
+      beginCooldownOrFinish();
     }
-  }, [state.globalLeft, state.phase, finish]);
+  }, [state.globalLeft, state.phase, beginCooldownOrFinish]);
 
   useEffect(() => {
     if (state.phase === "rest" && state.restLeft === 0 && !restEndingRef.current) {
@@ -250,7 +342,6 @@ export function WorkoutSession({ workout, exercises }: Props) {
   const startCircuit = useCallback(() => {
     if (state.phase !== "warmup") return;
     warmupEndingRef.current = true;
-    signalExerciseChange();
     dispatch({ type: "END_WARMUP", hold: holdFor(circuit[0]) });
   }, [state.phase, circuit]);
 
@@ -260,6 +351,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
       state.holdLeft === 0 &&
       !warmupEndingRef.current
     ) {
+      signalTimerDone();
       startCircuit();
     }
     if (state.phase !== "warmup") {
@@ -267,15 +359,78 @@ export function WorkoutSession({ workout, exercises }: Props) {
     }
   }, [state.phase, state.holdLeft, startCircuit]);
 
+  const advanceCooldown = useCallback(() => {
+    if (state.phase !== "cooldown") return;
+    const nextIndex = state.cooldownIndex + 1;
+    if (nextIndex >= cooldown.length) {
+      void finish(circuitElapsedRef.current || circuitElapsedSeconds(), {
+        silent: true,
+      });
+      return;
+    }
+    dispatch({
+      type: "MOVE_COOLDOWN",
+      index: nextIndex,
+      hold: holdFor(cooldown[nextIndex]),
+    });
+  }, [
+    state.phase,
+    state.cooldownIndex,
+    cooldown,
+    finish,
+    circuitElapsedSeconds,
+  ]);
+
+  useEffect(() => {
+    if (
+      state.phase === "cooldown" &&
+      state.holdLeft === 0 &&
+      !cooldownEndingRef.current
+    ) {
+      cooldownEndingRef.current = true;
+      signalTimerDone();
+      advanceCooldown();
+    }
+    if (state.phase === "cooldown" && state.holdLeft != null && state.holdLeft > 0) {
+      cooldownEndingRef.current = false;
+    }
+  }, [state.phase, state.holdLeft, advanceCooldown]);
+
   const current = circuit[state.exerciseIndex];
+  const cooldownCurrent = cooldown[state.cooldownIndex];
+
+  useEffect(() => {
+    const timedHold =
+      state.phase === "exercise" &&
+      state.holdLeft != null &&
+      current?.target_seconds != null;
+
+    if (!timedHold) {
+      holdAlarmRef.current = false;
+      return;
+    }
+
+    if (state.holdLeft === 0 && !holdAlarmRef.current) {
+      holdAlarmRef.current = true;
+      signalTimerDone();
+      return;
+    }
+
+    if (state.holdLeft > 0) {
+      holdAlarmRef.current = false;
+    }
+  }, [state.phase, state.holdLeft, current?.target_seconds]);
+
   const progressLabel =
     state.phase === "warmup"
       ? "Antes do circuito"
-      : state.phase === "rest"
-        ? `Descanso · volta ${state.round}/${CIRCUIT_ROUNDS}`
-        : state.phase === "done"
-          ? "Concluído"
-          : `Volta ${state.round}/${CIRCUIT_ROUNDS} · Exercício ${state.exerciseIndex + 1}/${circuit.length}`;
+      : state.phase === "cooldown"
+        ? `Alongamento ${state.cooldownIndex + 1}/${cooldown.length}`
+        : state.phase === "rest"
+          ? `Descanso · volta ${state.round}/${CIRCUIT_ROUNDS}`
+          : state.phase === "done"
+            ? "Concluído"
+            : `Volta ${state.round}/${CIRCUIT_ROUNDS} · Exercício ${state.exerciseIndex + 1}/${circuit.length}`;
 
   function onNext() {
     if (state.phase !== "exercise") return;
@@ -294,7 +449,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
     }
 
     if (isLastRound) {
-      void finish();
+      beginCooldownOrFinish();
       return;
     }
 
@@ -319,7 +474,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
         </h1>
         <p className="text-muted">
           Duração: {formatTime(state.elapsed)}.
-          {state.saving ? " Salvando…" : " Ofensiva atualizada."}
+          {state.saving ? " Salvando…" : " Sequência atualizada."}
         </p>
         {state.error && <ErrorBanner message={state.error} />}
         <div className="flex flex-col gap-3">
@@ -430,6 +585,81 @@ export function WorkoutSession({ workout, exercises }: Props) {
     );
   }
 
+  if (state.phase === "cooldown" && cooldownCurrent) {
+    const meta = `${cooldownCurrent.target_seconds ?? 30}s`;
+    const isLast = state.cooldownIndex >= cooldown.length - 1;
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-8 pt-4 lg:max-w-3xl lg:px-8 lg:py-8">
+        <header className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-energy">
+              Alongamento final
+            </p>
+            <p className="text-sm text-muted">{progressLabel}</p>
+          </div>
+          <div className="rounded-2xl border border-line bg-elevated px-4 py-2 text-center">
+            <p className="font-display text-xl font-semibold tabular-nums text-muted">
+              {formatTime(state.elapsed || circuitElapsedRef.current)}
+            </p>
+          </div>
+        </header>
+
+        <div className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-8">
+          <ExerciseMedia
+            src={
+              cooldownCurrent.exercise.image_url ||
+              cooldownCurrent.exercise.thumbnail_url
+            }
+            videoSrc={cooldownCurrent.exercise.video_url}
+            alt={cooldownCurrent.exercise.name}
+            priority
+            className="mb-4 w-full rounded-3xl shadow-sm lg:mb-0"
+          />
+
+          <div className="flex flex-1 flex-col gap-3">
+            <h1 className="font-display text-2xl font-semibold leading-tight lg:text-3xl">
+              {cooldownCurrent.exercise.name}
+            </h1>
+            <p className="text-lg font-semibold text-accent">Meta: {meta}</p>
+            {state.holdLeft != null && (
+              <p className="font-display text-4xl font-semibold tabular-nums text-energy">
+                {state.holdLeft}s
+              </p>
+            )}
+            <p className="text-sm leading-relaxed text-muted lg:text-base">
+              {cooldownCurrent.exercise.cues}
+            </p>
+            <p className="text-sm text-muted">
+              Fora do timer de 15 min. Ajuda peito, coluna e quadril após o
+              circuito.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 lg:mt-auto">
+              <button
+                type="button"
+                onClick={advanceCooldown}
+                className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold"
+              >
+                {isLast ? "Concluir treino" : "Próximo alongamento"}
+              </button>
+              <ConfirmAction
+                triggerLabel="Pular alongamento e salvar"
+                title="Pular o alongamento?"
+                description="O treino será salvo agora. O alongamento final ajuda peito, coluna e quadril."
+                confirmLabel="Sim, pular e salvar"
+                busyLabel="Salvando…"
+                variant="caution"
+                onConfirm={() =>
+                  finish(circuitElapsedRef.current || circuitElapsedSeconds())
+                }
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!current) {
     return <ErrorBanner message="Nenhum exercício encontrado neste treino." />;
   }
@@ -489,18 +719,22 @@ export function WorkoutSession({ workout, exercises }: Props) {
             >
               {state.exerciseIndex >= circuit.length - 1 &&
               state.round >= CIRCUIT_ROUNDS
-                ? "Concluir treino"
+                ? cooldown.length > 0
+                  ? "Ir para alongamento"
+                  : "Concluir treino"
                 : state.exerciseIndex >= circuit.length - 1
                   ? "Finalizar volta"
                   : "Próximo exercício"}
             </button>
-            <button
-              type="button"
-              onClick={() => void finish()}
-              className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
-            >
-              Encerrar e salvar
-            </button>
+            <ConfirmAction
+              triggerLabel="Encerrar e salvar"
+              title="Encerrar o treino agora?"
+              description="O progresso até aqui será salvo. Você não volta para o exercício atual."
+              confirmLabel="Sim, encerrar e salvar"
+              busyLabel="Salvando…"
+              variant="caution"
+              onConfirm={() => finish()}
+            />
           </div>
         </div>
       </div>

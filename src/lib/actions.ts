@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { checkPasswordLeak } from "@/lib/password-leak";
+import { appDateKey } from "@/lib/timezone";
 import {
   clampDurationSeconds,
   fail,
@@ -96,7 +97,7 @@ export async function saveBodyMetrics(input: {
   const weightError = validateWeightKg(weight);
   if (weightError) return fail(weightError);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = appDateKey();
   const { error } = await supabase.from("body_metrics").upsert(
     {
       user_id: user.id,
@@ -159,7 +160,7 @@ export async function resetUserData(): Promise<ActionResult> {
   const { supabase, user } = await requireAuthUser();
   if (!user) return fail("Sessão expirada. Faça login novamente.");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = appDateKey();
 
   const { error: logsError } = await supabase
     .from("workout_logs")

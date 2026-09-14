@@ -34,13 +34,15 @@ function ExerciseMediaInner({
 
   useEffect(() => {
     const el = videoRef.current;
-    if (!el) return;
-    const play = () => {
-      void el.play().catch(() => {
-        // Autoplay blocked — poster still shows
-      });
-    };
-    play();
+    if (!el || !videoSrc) return;
+    if (el.getAttribute("data-src") !== videoSrc) {
+      el.setAttribute("data-src", videoSrc);
+      el.src = videoSrc;
+      el.load();
+    }
+    void el.play().catch(() => {
+      // Autoplay blocked — poster still shows
+    });
   }, [videoSrc]);
 
   const showVideo = Boolean(videoSrc) && !videoFailed && !thumb;
@@ -55,9 +57,7 @@ function ExerciseMediaInner({
       {showVideo && videoSrc ? (
         <video
           ref={videoRef}
-          key={videoSrc}
           className="absolute inset-0 h-full w-full object-cover"
-          src={videoSrc}
           poster={src && !imageFailed ? src : undefined}
           autoPlay
           muted

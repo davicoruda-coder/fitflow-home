@@ -3,12 +3,12 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BodyMetricsChart } from "@/components/BodyMetricsChart";
+import { EvolutionInsightCard } from "@/components/EvolutionInsightCard";
 import { ErrorBanner } from "@/components/ui";
 import { saveBodyMetrics } from "@/lib/actions";
 import {
   BODY_METRICS_REMINDER_DAYS,
   daysSince,
-  formatWeightDelta,
   shouldPromptBodyMetrics,
 } from "@/lib/body-metrics";
 import { HEIGHT_MAX, HEIGHT_MIN, WEIGHT_MAX, WEIGHT_MIN } from "@/lib/validation";
@@ -16,12 +16,13 @@ import type { BodyMetric } from "@/lib/types";
 
 type Props = {
   metrics: BodyMetric[];
+  loadFailed?: boolean;
 };
 
-export function BodyMetricsSection({ metrics }: Props) {
+export function BodyMetricsSection({ metrics, loadFailed = false }: Props) {
   const router = useRouter();
   const latest = metrics[metrics.length - 1] ?? null;
-  const needsUpdate = shouldPromptBodyMetrics(metrics);
+  const needsUpdate = !loadFailed && shouldPromptBodyMetrics(metrics);
 
   const [heightCm, setHeightCm] = useState(
     latest ? String(latest.height_cm) : "",
@@ -75,7 +76,7 @@ export function BodyMetricsSection({ metrics }: Props) {
             </p>
           )}
         </div>
-        {!needsUpdate && (
+        {!needsUpdate && !loadFailed && (
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
@@ -86,6 +87,13 @@ export function BodyMetricsSection({ metrics }: Props) {
         )}
       </div>
 
+      {loadFailed && (
+        <div className="mt-4 rounded-2xl border border-line bg-elevated px-4 py-3 text-sm text-muted">
+          Não foi possível carregar suas medidas agora. Puxe para atualizar ou
+          volte em instantes.
+        </div>
+      )}
+
       {needsUpdate && (
         <div className="mt-4 rounded-2xl border border-energy/30 bg-energy-soft px-4 py-3 text-sm text-energy">
           {metrics.length === 0
@@ -94,17 +102,10 @@ export function BodyMetricsSection({ metrics }: Props) {
         </div>
       )}
 
-      {metrics.length > 0 && (
+      {!loadFailed && metrics.length > 0 && (
         <div className="mt-4">
           <BodyMetricsChart metrics={metrics} />
-          {metrics.length >= 2 && (
-            <p className="mt-2 text-sm text-muted">
-              Desde o primeiro registro:{" "}
-              <span className="font-semibold text-foreground">
-                {formatWeightDelta(latest!.weight_kg, metrics[0].weight_kg)}
-              </span>
-            </p>
-          )}
+          <EvolutionInsightCard metrics={metrics} />
         </div>
       )}
 

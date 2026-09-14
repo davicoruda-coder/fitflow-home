@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-13T18:08:36Z",
+  "title": "Design System: FitFlow Home",
+  "extensions": {
+    "colorMeta": {
+      "canopy-green": {
+        "role": "primary",
+        "displayName": "Canopy Green",
+        "canonical": "#127a52",
+        "tonalRamp": ["#062a1c", "#0a3d29", "#0d5338", "#127a52", "#2a9a6c", "#5fbe93", "#a8ddc4", "#e3f5ec"]
+      },
+      "ember-orange": {
+        "role": "secondary",
+        "displayName": "Ember Orange",
+        "canonical": "#e85d04",
+        "tonalRamp": ["#3a1602", "#6b2a04", "#9c3e05", "#e85d04", "#ff7a2f", "#ff9d5c", "#ffc9a3", "#ffe8d6"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#e9eeea",
+        "tonalRamp": ["#0b100e", "#151c19", "#2a3631", "#5a6b62", "#9aafa3", "#cdd6d0", "#e9eeea", "#ffffff"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page greetings and primary titles (Sora)." },
+      "body": { "displayName": "Body", "purpose": "UI copy and exercise cues (Manrope)." },
+      "label": { "displayName": "Label", "purpose": "Uppercase eyebrows and meta labels." }
+    },
+    "shadows": [
+      {
+        "name": "panel",
+        "value": "0 18px 48px -28px rgba(16, 24, 20, 0.28)",
+        "purpose": "Outer app shell elevation."
+      },
+      {
+        "name": "button-primary-glow",
+        "value": "0 10px 24px -14px color-mix(in srgb, var(--accent) 80%, transparent)",
+        "purpose": "Primary CTA soft lift."
+      }
+    ],
+    "motion": [
+      {
+        "name": "standard",
+        "value": "0.28s ease (0.16s on desktop)",
+        "purpose": "Interactive color/transform and page fade-up."
+      },
+      {
+        "name": "pulse-rest",
+        "value": "1.4s ease-in-out infinite",
+        "purpose": "Rest countdown pulse; disabled under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main CTA — Começar, salvar, treinar.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Começar</button>",
+      "css": ".ds-btn-primary{background:var(--accent,#127a52);color:var(--on-accent,#fff);min-height:3.5rem;padding:0 1.5rem;border:none;border-radius:1.1rem;font-weight:600;font-size:1rem;box-shadow:0 10px 24px -14px color-mix(in srgb,var(--accent,#127a52) 80%,transparent);transition:filter .16s ease,transform .16s ease}.ds-btn-primary:hover{filter:brightness(1.05)}.ds-btn-primary:active{transform:scale(0.98)}"
+    },
+    {
+      "name": "Accent Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Active nav and streak pill.",
+      "html": "<span class=\"ds-chip\">Hoje</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:0.5rem 0.75rem;border-radius:1.1rem;border:1px solid color-mix(in srgb,var(--accent,#127a52) 30%,var(--line,#cdd6d0));background:var(--accent-soft,#d3efe3);color:var(--accent,#127a52);font-weight:600;font-size:0.875rem}"
+    },
+    {
+      "name": "Energy Chip",
+      "kind": "chip",
+      "refersTo": "chip-energy",
+      "description": "Rest-day / energy eyebrow.",
+      "html": "<span class=\"ds-chip-energy\">DIA DE DESCANSO</span>",
+      "css": ".ds-chip-energy{display:inline-flex;padding:0.25rem 0.75rem;border-radius:9999px;border:1px solid color-mix(in srgb,var(--energy,#e85d04) 45%,var(--line,#cdd6d0));background:var(--energy-soft,#ffe4d1);color:var(--energy,#e85d04);font-size:0.6875rem;font-weight:600;letter-spacing:0.16em;text-transform:uppercase}"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "surface-card",
+      "description": "Default content card.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">Descanso ativo</p><p class=\"ds-card-body\">Hoje não há circuito programado.</p></div>",
+      "css": ".ds-card{border:1px solid var(--line,#cdd6d0);background:var(--bg-elevated,#fff);border-radius:1.1rem;padding:1rem;box-shadow:0 1px 0 color-mix(in srgb,var(--fg,#101814) 4%,transparent)}.ds-card-title{font-family:Sora,system-ui,sans-serif;font-weight:600;font-size:1.25rem;letter-spacing:-0.02em;margin:0 0 0.5rem}.ds-card-body{margin:0;color:var(--fg-muted,#5a6b62);font-size:0.875rem;line-height:1.5}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard form field.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Nome\" />",
+      "css": ".ds-input{display:block;width:100%;min-height:3rem;padding:0 1rem;border-radius:1rem;border:1px solid var(--line,#cdd6d0);background:var(--bg-elevated,#fff);color:var(--fg,#101814);font-size:1rem}.ds-input:focus-visible{outline:2px solid var(--accent,#127a52);outline-offset:2px}"
+    },
+    {
+      "name": "Danger Confirm",
+      "kind": "custom",
+      "refersTo": "confirm-danger",
+      "description": "Inline confirm panel for destructive actions.",
+      "html": "<div class=\"ds-confirm\"><p class=\"ds-confirm-title\">Sair da conta?</p><p class=\"ds-confirm-body\">Você vai precisar entrar de novo.</p><div class=\"ds-confirm-actions\"><button class=\"ds-confirm-yes\" type=\"button\">Sim, sair</button><button class=\"ds-confirm-no\" type=\"button\">Cancelar</button></div></div>",
+      "css": ".ds-confirm{border:1px solid color-mix(in srgb,var(--danger,#c0392b) 30%,transparent);background:color-mix(in srgb,var(--danger,#c0392b) 5%,transparent);border-radius:1.1rem;padding:1rem}.ds-confirm-title{margin:0;font-weight:600;font-size:0.875rem;color:var(--danger,#c0392b)}.ds-confirm-body{margin:0.25rem 0 0;font-size:0.875rem;color:var(--fg-muted,#5a6b62)}.ds-confirm-actions{display:flex;flex-direction:column;gap:0.5rem;margin-top:1rem}.ds-confirm-yes{min-height:3rem;border:none;border-radius:1.1rem;background:var(--danger,#c0392b);color:#fff;font-weight:600}.ds-confirm-no{min-height:3rem;border:1px solid var(--line,#cdd6d0);border-radius:1.1rem;background:var(--bg-elevated,#fff);font-weight:600}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Home Circuit",
+    "overview": "FitFlow Home looks like a focused training studio that lives in your pocket: quiet surfaces, one strong green voice for action, and a warm ember accent for rest/energy moments — never a flashy gym marketing page. Density stays comfortable for phone thumbs while desktop opens into a side-rail + two-column operate layout without inventing a second brand. The system is intentionally lean: solid elevated panels, hairline borders, soft ambient glows, and short purposeful motion.",
+    "keyCharacteristics": [
+      "Operate-mode product UI (tasks over spectacle)",
+      "Dual-theme green primary + ember secondary",
+      "Sora display + Manrope body",
+      "Large rounded controls and 48–56px tap targets",
+      "Mobile bottom nav / desktop side rail"
+    ],
+    "rules": [
+      {
+        "name": "The One Canopy Rule",
+        "body": "Primary green drives CTAs and active state; don’t introduce a third brand hue. Ember is reserved for rest/energy/caution.",
+        "section": "colors"
+      },
+      {
+        "name": "The Soft Companion Rule",
+        "body": "Accent text sits on its soft tint, never raw neon on paper.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cue Clarity Rule",
+        "body": "Exercise guidance is body-size muted text under the title — never decorative display competing with the exercise name.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Cards stay flat (border + elevated fill). Don’t add multi-layer soft UI shadows or glass blur on desktop.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Confirm Drastic Rule",
+        "body": "Logout, reset, and mid-session abandon always require an explicit second step.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do keep primary CTAs canopy green and large enough for thumbs (min-h-14 when primary).",
+      "Do use ember for rest/energy/caution — not as a second primary CTA color.",
+      "Do preserve light/dark token pairs when adding surfaces.",
+      "Do prefer solid elevated panels on desktop (performance + clarity).",
+      "Do keep exercise names readable (allow 2 lines) beside thumbs."
+    ],
+    "donts": [
+      "Don’t introduce purple/indigo AI-default palettes or cream+terracotta editorial clichés foreign to this canopy/ember system.",
+      "Don’t add glassmorphism / heavy backdrop-blur back onto cards or the side rail.",
+      "Don’t inflate the UI with dashboard chrome, stat strips, or marketing hero overlays inside the operate app shell.",
+      "Don’t skip confirmation on destructive actions.",
+      "Don’t invent a third accent hue for variety."
+    ]
+  }
+}

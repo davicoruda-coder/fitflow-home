@@ -50,6 +50,7 @@ export type WorkoutExercise = {
   target_reps: number | null;
   target_seconds: number | null;
   is_warmup: boolean;
+  is_cooldown: boolean;
   exercise: Exercise;
 };
 

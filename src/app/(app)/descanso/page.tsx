@@ -7,14 +7,14 @@ export const metadata: Metadata = {
 
 export default function DescansoPage() {
   return (
-    <div className="px-6 py-8 animate-fade-up">
+    <div className="px-6 py-8 animate-fade-up lg:mx-auto lg:max-w-2xl lg:px-0 lg:py-10">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-energy">
         Descanso ativo
       </p>
-      <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+      <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight lg:text-4xl">
         Caminhada leve
       </h1>
-      <div className="surface-card mt-6 rounded-3xl p-5">
+      <div className="surface-card mt-6 rounded-3xl p-5 lg:p-7">
         <p className="text-base leading-relaxed text-muted">
           Sem cronômetro de circuito hoje. Uma caminhada de 15–20 minutos em
           ritmo conversacional ajuda recuperação e consistência — sem
@@ -37,7 +37,7 @@ export default function DescansoPage() {
       </div>
       <Link
         href="/hoje"
-        className="btn-primary mt-10 flex min-h-14 items-center justify-center rounded-2xl px-6 font-semibold"
+        className="btn-primary mt-10 flex min-h-14 items-center justify-center rounded-2xl px-6 font-semibold lg:max-w-xs"
       >
         Voltar para Hoje
       </Link>

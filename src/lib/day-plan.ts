@@ -1,10 +1,5 @@
 import type { DayPlan, Profile, ScheduleConfig, ScheduleMode, WorkoutCode } from "@/lib/types";
-
-function toUtcDateOnly(date: Date): Date {
-  return new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-  );
-}
+import { APP_TIMEZONE, appCalendarDate, appDateKey } from "@/lib/timezone";
 
 function parseDateOnly(value: string): Date {
   const [y, m, d] = value.split("-").map(Number);
@@ -19,10 +14,10 @@ export function toScheduleConfig(profile: Profile): ScheduleConfig {
   };
 }
 
-/** Days between start_date and today (local calendar days as UTC date-only). */
+/** Days between start_date and today (app timezone calendar days). */
 export function getDayOffset(startDate: string, today: Date = new Date()): number {
   const start = parseDateOnly(startDate);
-  const end = toUtcDateOnly(today);
+  const end = appCalendarDate(today);
   const ms = end.getTime() - start.getTime();
   return Math.max(0, Math.floor(ms / 86_400_000));
 }
@@ -93,11 +88,15 @@ export function getNextWorkoutCode(
 
 export function formatDateLabel(date: Date = new Date()): string {
   return date.toLocaleDateString("pt-BR", {
+    timeZone: APP_TIMEZONE,
     weekday: "long",
     day: "numeric",
     month: "long",
   });
 }
+
+/** Re-export for callers that need the app calendar key. */
+export { appDateKey };
 
 export const SCHEDULE_MODES: { value: ScheduleMode; label: string; hint: string }[] = [
   {
