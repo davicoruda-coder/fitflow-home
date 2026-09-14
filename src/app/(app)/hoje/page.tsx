@@ -380,13 +380,13 @@ function Header({
         </h1>
       </div>
       <div
-        className="chip flex min-w-[5.75rem] shrink-0 flex-col items-center justify-center rounded-2xl px-3 py-2 text-center lg:min-w-24 lg:px-4 lg:py-3"
+        className="chip flex min-w-[6.25rem] shrink-0 flex-col items-center justify-center rounded-2xl px-3.5 py-2.5 text-center lg:min-w-24 lg:px-4 lg:py-3"
         title="Dias de treino seguidos. Dias de descanso não zeram a sequência."
       >
-        <p className="font-display text-xl font-semibold leading-none lg:text-2xl">
+        <p className="w-full text-center font-display text-xl font-semibold leading-none lg:text-2xl">
           {streak}
         </p>
-        <p className="mt-1 text-[0.6875rem] font-semibold uppercase">
+        <p className="mt-1 w-full text-center text-[0.6875rem] font-semibold uppercase tracking-normal">
           Sequência
         </p>
       </div>

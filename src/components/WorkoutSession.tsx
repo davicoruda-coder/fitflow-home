@@ -405,7 +405,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
       state.holdLeft != null &&
       current?.target_seconds != null;
 
-    if (!timedHold) {
+    if (!timedHold || state.holdLeft == null) {
       holdAlarmRef.current = false;
       return;
     }
