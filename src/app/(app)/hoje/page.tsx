@@ -383,10 +383,10 @@ function Header({
         className="chip flex min-w-[5.75rem] shrink-0 flex-col items-center justify-center rounded-2xl px-3 py-2 text-center lg:min-w-24 lg:px-4 lg:py-3"
         title="Dias de treino seguidos. Dias de descanso não zeram a sequência."
       >
-        <p className="font-display text-xl font-semibold leading-none tabular-nums lg:text-2xl">
+        <p className="font-display text-xl font-semibold leading-none lg:text-2xl">
           {streak}
         </p>
-        <p className="mt-1 pl-[0.08em] text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        <p className="mt-1 text-[0.6875rem] font-semibold uppercase">
           Sequência
         </p>
       </div>
