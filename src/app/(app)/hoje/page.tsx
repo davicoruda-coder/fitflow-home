@@ -9,6 +9,7 @@ import {
   formatDateLabel,
   getDayPlan,
   getNextWorkoutCode,
+  getWorkoutCompletionMessage,
   toScheduleConfig,
 } from "@/lib/day-plan";
 import { appDateKey } from "@/lib/timezone";
@@ -106,7 +107,7 @@ export default async function HojePage() {
             {streak === 1 ? " dia" : " dias"}
           </p>
           <p className="mt-4 text-sm leading-relaxed text-muted lg:text-base">
-            Bom trabalho. Descanse o corpo — amanhã a sequência continua.
+            {getWorkoutCompletionMessage(schedule)}
           </p>
 
           <Link

@@ -3,7 +3,7 @@
 ## Antes do deploy
 
 1. Projeto Supabase criado
-2. SQL Editor: rodar as migrations `001` → `006` em ordem
+2. SQL Editor: rodar as migrations `001` → `010` em ordem
 3. Auth → Email habilitado; (opcional) desativar confirmação de e-mail no MVP
 4. `.env.local` com URL e anon key reais (substituir o placeholder)
 

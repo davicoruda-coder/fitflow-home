@@ -86,6 +86,71 @@ export function getNextWorkoutCode(
   return "A";
 }
 
+export type NextScheduledWorkout = {
+  daysAway: number;
+  code: WorkoutCode;
+  weekday: number;
+};
+
+/**
+ * Finds the next scheduled workout day strictly AFTER today (from tomorrow onwards).
+ */
+export function getNextScheduledWorkoutAfterToday(
+  config: ScheduleConfig,
+  today: Date = new Date(),
+): NextScheduledWorkout | null {
+  const dayOffset = getDayOffset(config.startDate, today);
+  for (let i = 1; i <= 28; i++) {
+    const offset = dayOffset + i;
+    if (!isWorkoutAtOffset(config, offset)) continue;
+    const workoutIndex = countWorkoutsThroughOffset(config, offset) - 1;
+    return {
+      daysAway: i,
+      code: codeForWorkoutIndex(workoutIndex),
+      weekday: weekdayAtOffset(config.startDate, offset),
+    };
+  }
+  return null;
+}
+
+function formatWeekdayTarget(weekday: number, daysAway: number): string {
+  const isMasculine = weekday === 0 || weekday === 6;
+  const names: Record<number, string> = {
+    0: "domingo",
+    1: "segunda-feira",
+    2: "terça-feira",
+    3: "quarta-feira",
+    4: "quinta-feira",
+    5: "sexta-feira",
+    6: "sábado",
+  };
+  const name = names[weekday] ?? "próximo treino";
+  if (daysAway >= 7) {
+    return isMasculine ? `no próximo ${name}` : `na próxima ${name}`;
+  }
+  return isMasculine ? `no ${name}` : `na ${name}`;
+}
+
+/**
+ * Friendly post-workout completion message considering tomorrow and upcoming schedule.
+ */
+export function getWorkoutCompletionMessage(
+  config: ScheduleConfig,
+  today: Date = new Date(),
+): string {
+  const next = getNextScheduledWorkoutAfterToday(config, today);
+  if (!next) {
+    return "Bom trabalho. Descanse o corpo — seus treinos estão em dia.";
+  }
+
+  if (next.daysAway === 1) {
+    return "Bom trabalho. Descanse o corpo — amanhã a sequência continua.";
+  }
+
+  const targetDay = formatWeekdayTarget(next.weekday, next.daysAway);
+  return `Bom trabalho. Descanse o corpo — amanhã é dia de descanso e a sequência continua ${targetDay}.`;
+}
+
 export function formatDateLabel(date: Date = new Date()): string {
   return date.toLocaleDateString("pt-BR", {
     timeZone: APP_TIMEZONE,
