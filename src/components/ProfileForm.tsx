@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { updateProfile } from "@/lib/actions";
 import { ErrorBanner } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { TimerSoundSettings } from "@/components/TimerSoundSettings";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { SCHEDULE_MODES, WEEKDAY_OPTIONS } from "@/lib/day-plan";
@@ -69,6 +70,7 @@ export function ProfileForm({ profile, email }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <ThemeToggle />
+      <TimerSoundSettings />
 
       <form
         onSubmit={onSave}

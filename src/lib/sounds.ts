@@ -54,25 +54,81 @@ export function unlockAudio() {
   }
 }
 
+let timerDoneTimeouts: ReturnType<typeof setTimeout>[] = [];
+
+export function stopTimerDone() {
+  for (const id of timerDoneTimeouts) {
+    clearTimeout(id);
+  }
+  timerDoneTimeouts = [];
+}
+
 export function signalExerciseChange() {
+  stopTimerDone();
   beep(720, 90, 0.07);
   vibrate(30);
 }
 
 export function signalRestStart() {
+  stopTimerDone();
   beep(440, 140, 0.07);
 }
 
-/** Hold / stretch / warmup timer reached zero — time to stop. */
-export function signalTimerDone() {
-  beep(880, 220, 0.12);
-  setTimeout(() => beep(1175, 280, 0.14), 160);
-  setTimeout(() => beep(1319, 360, 0.12), 380);
-  vibrate([80, 60, 140]);
+export const TIMER_REPEATS_STORAGE_KEY = "fitflow-timer-repeats";
+export type TimerRepeatCount = 1 | 2 | 3;
+export const DEFAULT_TIMER_REPEATS: TimerRepeatCount = 3;
+
+export function getTimerRepeats(): TimerRepeatCount {
+  if (typeof window === "undefined") return DEFAULT_TIMER_REPEATS;
+  try {
+    const raw = localStorage.getItem(TIMER_REPEATS_STORAGE_KEY);
+    const parsed = Number(raw);
+    if (parsed === 1 || parsed === 2 || parsed === 3) {
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_TIMER_REPEATS;
+}
+
+export function setTimerRepeats(count: TimerRepeatCount): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(TIMER_REPEATS_STORAGE_KEY, String(count));
+  } catch {
+    // ignore
+  }
+}
+
+/** Hold / stretch / warmup timer reached zero — time to stop. Repeats per user setting (default 3x). */
+export function signalTimerDone(repeatCount?: number, intervalMs = 900) {
+  stopTimerDone();
+  const count = repeatCount ?? getTimerRepeats();
+
+  const playBurst = () => {
+    beep(880, 220, 0.12);
+    timerDoneTimeouts.push(setTimeout(() => beep(1175, 280, 0.14), 160));
+    timerDoneTimeouts.push(setTimeout(() => beep(1319, 360, 0.12), 380));
+    vibrate([80, 60, 140]);
+  };
+
+  playBurst();
+
+  for (let i = 1; i < count; i++) {
+    timerDoneTimeouts.push(
+      setTimeout(() => {
+        playBurst();
+      }, i * intervalMs)
+    );
+  }
 }
 
 export function signalComplete() {
+  stopTimerDone();
   beep(990, 180, 0.11);
   setTimeout(() => beep(1200, 220, 0.12), 180);
   vibrate([40, 40, 80]);
 }
+
+

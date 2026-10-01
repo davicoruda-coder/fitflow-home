@@ -18,6 +18,7 @@ import {
   signalExerciseChange,
   signalRestStart,
   signalTimerDone,
+  stopTimerDone,
   unlockAudio,
 } from "@/lib/sounds";
 import type { Workout, WorkoutExercise } from "@/lib/types";
@@ -471,6 +472,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
     return () => {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
+      stopTimerDone();
     };
   }, []);
 
@@ -602,6 +604,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
   useEffect(() => {
     if (!state.holdCompleted) {
       holdAlarmRef.current = false;
+      stopTimerDone();
     }
   }, [
     state.holdCompleted,

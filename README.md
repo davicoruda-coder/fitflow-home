@@ -67,6 +67,7 @@ O **FitFlow Home** é um app de treino focado em consistência, não em volume:
 - **Altura e peso** com lembrete a cada 30 dias e gráfico de evolução
 - **Resetar dados** (começar de novo) no Histórico
 - **Tema claro/escuro** no Perfil
+- **Alarme do temporizador ajustável** (1x, 2x ou 3x) no Perfil com teste de áudio
 - **Ciclo de treino** no Perfil: todo dia, dia sim/dia não, ou dias da semana
 - Layout responsivo (mobile/PWA + desktop)
 - **PWA** instalável (manifest + service worker)
@@ -136,7 +137,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `/treino/A`, `/treino/B` | Sessão com cronômetro |
 | `/descanso` | Dica de caminhada |
 | `/historico` | Logs, medidas, reset |
-| `/perfil` | Nome, ciclo, tema, trocar senha, logout |
+| `/perfil` | Nome, ciclo, tema, alarme do temporizador, trocar senha, logout |
 
 ---
 
