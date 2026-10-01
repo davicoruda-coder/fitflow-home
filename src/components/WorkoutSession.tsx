@@ -409,18 +409,18 @@ function HoldTimerBox({
             <button
               type="button"
               onClick={onStart}
-              className="btn-primary inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold"
+              className="btn-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold shadow-sm transition-transform active:scale-[0.98]"
             >
-              <PlayIcon className="h-3.5 w-3.5" />
+              <PlayIcon className="h-4 w-4" />
               {holdLeft < holdTotal ? "Continuar" : label}
             </button>
           ) : (
             <button
               type="button"
               onClick={onPause}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-line bg-elevated px-4 text-xs font-semibold hover:border-foreground/30"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line bg-elevated px-5 text-sm font-semibold hover:border-foreground/30 transition-transform active:scale-[0.98]"
             >
-              <PauseIcon className="h-3.5 w-3.5" />
+              <PauseIcon className="h-4 w-4" />
               Pausar
             </button>
           )}
@@ -430,9 +430,9 @@ function HoldTimerBox({
               type="button"
               onClick={onReset}
               title="Reiniciar temporizador"
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-line bg-elevated px-3 text-xs font-semibold text-muted hover:text-foreground"
+              className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-xl border border-line bg-elevated px-4 text-sm font-semibold text-muted hover:text-foreground transition-transform active:scale-[0.98]"
             >
-              <RotateCcwIcon className="h-3.5 w-3.5" />
+              <RotateCcwIcon className="h-4 w-4" />
               Reiniciar
             </button>
           )}
@@ -848,49 +848,21 @@ export function WorkoutSession({ workout, exercises }: Props) {
             </p>
 
             <div className="mt-4 flex flex-col gap-3 lg:mt-auto">
-              {!state.isHoldRunning && !state.holdCompleted ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={onStartHold}
-                    className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
-                  >
-                    <PlayIcon className="h-5 w-5" />
-                    Iniciar aquecimento ({state.holdLeft ?? targetSec}s)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={startCircuit}
-                    className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
-                  >
-                    Pular aquecimento e começar circuito
-                  </button>
-                </>
-              ) : state.isHoldRunning ? (
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={onPauseHold}
-                    className="min-h-14 flex-1 rounded-2xl border border-line bg-elevated px-4 text-base font-semibold flex items-center justify-center gap-2"
-                  >
-                    <PauseIcon className="h-5 w-5" />
-                    Pausar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={startCircuit}
-                    className="min-h-14 flex-1 rounded-2xl btn-primary px-4 text-base font-semibold"
-                  >
-                    Começar circuito
-                  </button>
-                </div>
-              ) : (
+              {state.isHoldRunning || state.holdCompleted ? (
                 <button
                   type="button"
                   onClick={startCircuit}
                   className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
                 >
                   Começar circuito
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startCircuit}
+                  className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
+                >
+                  Pular aquecimento e começar circuito
                 </button>
               )}
             </div>
@@ -959,49 +931,21 @@ export function WorkoutSession({ workout, exercises }: Props) {
             </p>
 
             <div className="mt-4 flex flex-col gap-3 lg:mt-auto">
-              {!state.isHoldRunning && !state.holdCompleted ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={onStartHold}
-                    className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
-                  >
-                    <PlayIcon className="h-5 w-5" />
-                    Iniciar alongamento ({state.holdLeft ?? targetSec}s)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={advanceCooldown}
-                    className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
-                  >
-                    Pular para o próximo alongamento
-                  </button>
-                </>
-              ) : state.isHoldRunning ? (
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={onPauseHold}
-                    className="min-h-14 flex-1 rounded-2xl border border-line bg-elevated px-4 text-base font-semibold flex items-center justify-center gap-2"
-                  >
-                    <PauseIcon className="h-5 w-5" />
-                    Pausar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={advanceCooldown}
-                    className="min-h-14 flex-1 rounded-2xl btn-primary px-4 text-base font-semibold"
-                  >
-                    {isLast ? "Concluir treino" : "Próximo alongamento"}
-                  </button>
-                </div>
-              ) : (
+              {state.isHoldRunning || state.holdCompleted ? (
                 <button
                   type="button"
                   onClick={advanceCooldown}
                   className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
                 >
                   {isLast ? "Concluir treino" : "Próximo alongamento"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={advanceCooldown}
+                  className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
+                >
+                  {isLast ? "Pular e concluir treino" : "Pular para o próximo alongamento"}
                 </button>
               )}
 
@@ -1116,41 +1060,13 @@ export function WorkoutSession({ workout, exercises }: Props) {
 
           <div className="mt-4 flex flex-col gap-3 lg:mt-auto">
             {isTimedHold && !state.isHoldRunning && !state.holdCompleted ? (
-              <>
-                <button
-                  type="button"
-                  onClick={onStartHold}
-                  className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
-                >
-                  <PlayIcon className="h-5 w-5" />
-                  Iniciar contagem ({state.holdLeft ?? current.target_seconds}s)
-                </button>
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
-                >
-                  {nextButtonLabel} (sem cronometrar)
-                </button>
-              </>
-            ) : isTimedHold && state.isHoldRunning ? (
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={onPauseHold}
-                  className="min-h-14 flex-1 rounded-2xl border border-line bg-elevated px-4 text-base font-semibold flex items-center justify-center gap-2"
-                >
-                  <PauseIcon className="h-5 w-5" />
-                  Pausar
-                </button>
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className="min-h-14 flex-1 rounded-2xl btn-primary px-4 text-base font-semibold"
-                >
-                  {nextButtonLabel}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onNext}
+                className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
+              >
+                {nextButtonLabel} (sem cronometrar)
+              </button>
             ) : (
               <button
                 type="button"
