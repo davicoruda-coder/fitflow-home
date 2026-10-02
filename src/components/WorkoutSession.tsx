@@ -7,6 +7,7 @@ import { ConfirmAction } from "@/components/ConfirmAction";
 import { ErrorBanner } from "@/components/ui";
 import {
   CIRCUIT_ROUNDS,
+  COOLDOWN_TRANSITION_SECONDS,
   REST_BETWEEN_ROUNDS_SECONDS,
   WARMUP_SECONDS,
   WORKOUT_DURATION_SECONDS,
@@ -15,6 +16,7 @@ import { splitSession } from "@/lib/workout";
 import { saveWorkoutLog } from "@/lib/actions";
 import {
   signalComplete,
+  signalCountdownTick,
   signalExerciseChange,
   signalRestStart,
   signalTimerDone,
@@ -41,6 +43,9 @@ type State = {
   round: number;
   exerciseIndex: number;
   cooldownIndex: number;
+  cooldownTotal: number;
+  cooldownTransitionLeft: number | null;
+  isCooldownTransitionPaused: boolean;
   globalLeft: number;
   restLeft: number;
   holdLeft: number | null;
@@ -63,7 +68,16 @@ type Action =
   | { type: "END_REST"; hold: number | null }
   | { type: "END_WARMUP"; hold: number | null }
   | { type: "START_COOLDOWN"; hold: number | null; elapsed: number }
-  | { type: "MOVE_COOLDOWN"; index: number; hold: number | null }
+  | {
+      type: "MOVE_COOLDOWN";
+      index: number;
+      hold: number | null;
+      autoStart?: boolean;
+    }
+  | { type: "START_COOLDOWN_TRANSITION" }
+  | { type: "PAUSE_COOLDOWN_TRANSITION" }
+  | { type: "RESUME_COOLDOWN_TRANSITION" }
+  | { type: "CANCEL_COOLDOWN_TRANSITION" }
   | { type: "FINISH_START"; elapsed: number }
   | { type: "FINISH_OK" }
   | { type: "FINISH_ERROR"; message: string };
@@ -146,6 +160,9 @@ function createInitialState(init: SessionInit): State {
     round: 1,
     exerciseIndex: 0,
     cooldownIndex: 0,
+    cooldownTotal: init.cooldown.length,
+    cooldownTransitionLeft: null,
+    isCooldownTransitionPaused: false,
     globalLeft: WORKOUT_DURATION_SECONDS,
     restLeft: REST_BETWEEN_ROUNDS_SECONDS,
     holdLeft: initialHold,
@@ -165,6 +182,8 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         isHoldRunning: true,
+        cooldownTransitionLeft: null,
+        isCooldownTransitionPaused: false,
       };
     case "PAUSE_HOLD":
       return {
@@ -177,21 +196,44 @@ function reducer(state: State, action: Action): State {
         holdLeft: state.holdTotal,
         isHoldRunning: false,
         holdCompleted: false,
+        cooldownTransitionLeft: null,
+        isCooldownTransitionPaused: false,
       };
     case "TICK": {
       if (state.phase === "done") return state;
 
       // In warmup or cooldown: globalLeft does not tick
       if (state.phase === "warmup" || state.phase === "cooldown") {
+        if (state.phase === "cooldown" && state.cooldownTransitionLeft != null) {
+          if (state.isCooldownTransitionPaused) {
+            return state;
+          }
+          const nextTransition = Math.max(0, state.cooldownTransitionLeft - 1);
+          return {
+            ...state,
+            cooldownTransitionLeft: nextTransition,
+          };
+        }
+
         if (!state.isHoldRunning || state.holdLeft == null || state.holdLeft <= 0) {
           return state;
         }
         const nextHold = state.holdLeft - 1;
+        const willComplete = nextHold === 0;
+        const shouldStartTransition =
+          state.phase === "cooldown" &&
+          willComplete &&
+          state.cooldownIndex < state.cooldownTotal - 1;
+
         return {
           ...state,
           holdLeft: nextHold,
           isHoldRunning: nextHold > 0,
-          holdCompleted: nextHold === 0,
+          holdCompleted: willComplete,
+          cooldownTransitionLeft: shouldStartTransition
+            ? COOLDOWN_TRANSITION_SECONDS
+            : null,
+          isCooldownTransitionPaused: false,
         };
       }
 
@@ -283,6 +325,8 @@ function reducer(state: State, action: Action): State {
         holdTotal: action.hold,
         isHoldRunning: false,
         holdCompleted: false,
+        cooldownTransitionLeft: null,
+        isCooldownTransitionPaused: false,
         elapsed: action.elapsed,
       };
     case "MOVE_COOLDOWN":
@@ -292,8 +336,32 @@ function reducer(state: State, action: Action): State {
         cooldownIndex: action.index,
         holdLeft: action.hold,
         holdTotal: action.hold,
-        isHoldRunning: false,
+        isHoldRunning: action.autoStart ?? false,
         holdCompleted: false,
+        cooldownTransitionLeft: null,
+        isCooldownTransitionPaused: false,
+      };
+    case "START_COOLDOWN_TRANSITION":
+      return {
+        ...state,
+        cooldownTransitionLeft: COOLDOWN_TRANSITION_SECONDS,
+        isCooldownTransitionPaused: false,
+      };
+    case "PAUSE_COOLDOWN_TRANSITION":
+      return {
+        ...state,
+        isCooldownTransitionPaused: true,
+      };
+    case "RESUME_COOLDOWN_TRANSITION":
+      return {
+        ...state,
+        isCooldownTransitionPaused: false,
+      };
+    case "CANCEL_COOLDOWN_TRANSITION":
+      return {
+        ...state,
+        cooldownTransitionLeft: null,
+        isCooldownTransitionPaused: false,
       };
     case "FINISH_START":
       return {
@@ -443,6 +511,97 @@ function HoldTimerBox({
   );
 }
 
+function CooldownTransitionBox({
+  secondsLeft,
+  totalSeconds,
+  isPaused,
+  nextExerciseName,
+  nextExerciseCues,
+  isNextLast,
+  onStartNow,
+  onTogglePause,
+}: {
+  secondsLeft: number;
+  totalSeconds: number;
+  isPaused: boolean;
+  nextExerciseName: string;
+  nextExerciseCues?: string | null;
+  isNextLast: boolean;
+  onStartNow: () => void;
+  onTogglePause: () => void;
+}) {
+  const percent = Math.max(0, Math.min(100, (secondsLeft / totalSeconds) * 100));
+
+  return (
+    <div className="surface-card rounded-2xl p-4 lg:p-5 border-2 border-energy/40 bg-energy-soft/25 dark:bg-energy-soft/15 shadow-sm animate-fade-up">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-energy text-white font-display text-3xl font-bold tabular-nums shadow-sm animate-pulse-rest">
+            {secondsLeft}
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-energy">
+              {isNextLast ? "Último alongamento em..." : "Próximo alongamento em..."}
+            </p>
+            <p className="font-display text-lg font-semibold leading-snug lg:text-xl text-foreground">
+              {nextExerciseName}
+            </p>
+          </div>
+        </div>
+
+        <span className="chip-energy inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
+          <span
+            className={`inline-block h-2 w-2 rounded-full bg-energy ${
+              isPaused ? "" : "animate-ping"
+            }`}
+          />
+          {isPaused ? "Pausado" : "Transição"}
+        </span>
+      </div>
+
+      <div className="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-line/50">
+        <div
+          className="h-full bg-energy transition-all duration-300"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      {nextExerciseCues && (
+        <p className="mt-2.5 text-xs text-muted leading-relaxed lg:text-sm">
+          <strong className="text-foreground">Dica: </strong>
+          {nextExerciseCues}
+        </p>
+      )}
+
+      <p className="mt-2 text-xs text-muted">
+        {isPaused
+          ? "Contagem pausada. Posicione-se e clique em continuar ou iniciar agora."
+          : "Troque de postura e prepare-se. O temporizador iniciará automaticamente."}
+      </p>
+
+      <div className="mt-3.5 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onStartNow}
+          className="btn-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold shadow-sm transition-transform active:scale-[0.98]"
+        >
+          <PlayIcon className="h-4 w-4" />
+          Iniciar agora
+        </button>
+
+        <button
+          type="button"
+          onClick={onTogglePause}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line bg-elevated px-4 text-sm font-semibold hover:border-foreground/30 transition-transform active:scale-[0.98]"
+        >
+          {isPaused ? <PlayIcon className="h-4 w-4" /> : <PauseIcon className="h-4 w-4" />}
+          {isPaused ? "Continuar contagem" : "Pausar contagem"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function WorkoutSession({ workout, exercises }: Props) {
   const router = useRouter();
   const { warmup, circuit, cooldown } = useMemo(
@@ -464,6 +623,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
   const restEndingRef = useRef(false);
   const cooldownStartedRef = useRef(false);
   const holdAlarmRef = useRef(false);
+  const cooldownTransitionRef = useRef(false);
 
   useEffect(() => {
     const unlock = () => unlockAudio();
@@ -642,28 +802,72 @@ export function WorkoutSession({ workout, exercises }: Props) {
     dispatch({ type: "END_WARMUP", hold: holdFor(circuit[0]) });
   }, [state.phase, circuit]);
 
-  const advanceCooldown = useCallback(() => {
-    if (state.phase !== "cooldown") return;
-    const nextIndex = state.cooldownIndex + 1;
-    if (nextIndex >= cooldown.length) {
-      void finish(circuitElapsedRef.current || circuitElapsedSeconds(), {
-        silent: true,
+  const advanceCooldown = useCallback(
+    (autoStart = false) => {
+      if (state.phase !== "cooldown") return;
+      const nextIndex = state.cooldownIndex + 1;
+      if (nextIndex >= cooldown.length) {
+        void finish(circuitElapsedRef.current || circuitElapsedSeconds(), {
+          silent: true,
+        });
+        return;
+      }
+      signalExerciseChange();
+      dispatch({
+        type: "MOVE_COOLDOWN",
+        index: nextIndex,
+        hold: holdFor(cooldown[nextIndex]),
+        autoStart,
       });
-      return;
+    },
+    [
+      state.phase,
+      state.cooldownIndex,
+      cooldown,
+      finish,
+      circuitElapsedSeconds,
+    ],
+  );
+
+  const togglePauseCooldownTransition = useCallback(() => {
+    if (state.isCooldownTransitionPaused) {
+      dispatch({ type: "RESUME_COOLDOWN_TRANSITION" });
+    } else {
+      dispatch({ type: "PAUSE_COOLDOWN_TRANSITION" });
     }
-    signalExerciseChange();
-    dispatch({
-      type: "MOVE_COOLDOWN",
-      index: nextIndex,
-      hold: holdFor(cooldown[nextIndex]),
-    });
+  }, [state.isCooldownTransitionPaused]);
+
+  // Audio countdown ticks on 3, 2, 1 during cooldown transition
+  useEffect(() => {
+    if (
+      state.phase === "cooldown" &&
+      state.cooldownTransitionLeft != null &&
+      state.cooldownTransitionLeft > 0 &&
+      state.cooldownTransitionLeft <= 3 &&
+      !state.isCooldownTransitionPaused
+    ) {
+      signalCountdownTick(state.cooldownTransitionLeft);
+    }
   }, [
     state.phase,
-    state.cooldownIndex,
-    cooldown,
-    finish,
-    circuitElapsedSeconds,
+    state.cooldownTransitionLeft,
+    state.isCooldownTransitionPaused,
   ]);
+
+  // Automatic advance to next cooldown exercise when countdown hits 0
+  useEffect(() => {
+    if (
+      state.phase === "cooldown" &&
+      state.cooldownTransitionLeft === 0 &&
+      !cooldownTransitionRef.current
+    ) {
+      cooldownTransitionRef.current = true;
+      advanceCooldown(true);
+    }
+    if (state.phase !== "cooldown" || state.cooldownTransitionLeft !== 0) {
+      cooldownTransitionRef.current = false;
+    }
+  }, [state.phase, state.cooldownTransitionLeft, advanceCooldown]);
 
   const current = circuit[state.exerciseIndex];
   const cooldownCurrent = cooldown[state.cooldownIndex];
@@ -879,6 +1083,10 @@ export function WorkoutSession({ workout, exercises }: Props) {
     const targetSec = cooldownCurrent.target_seconds ?? 30;
     const meta = `${targetSec}s`;
     const isLast = state.cooldownIndex >= cooldown.length - 1;
+    const nextCooldownExercise = cooldown[state.cooldownIndex + 1];
+    const isNextLast = state.cooldownIndex + 1 >= cooldown.length - 1;
+    const isTransitioning =
+      state.cooldownTransitionLeft != null && state.cooldownTransitionLeft >= 0;
 
     return (
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-8 pt-4 lg:max-w-3xl lg:px-8 lg:py-8">
@@ -914,16 +1122,49 @@ export function WorkoutSession({ workout, exercises }: Props) {
             </h1>
             <p className="text-lg font-semibold text-accent">Meta: {meta}</p>
 
-            <HoldTimerBox
-              holdLeft={state.holdLeft ?? targetSec}
-              holdTotal={state.holdTotal ?? targetSec}
-              isRunning={state.isHoldRunning}
-              isCompleted={state.holdCompleted}
-              label="Iniciar alongamento"
-              onStart={onStartHold}
-              onPause={onPauseHold}
-              onReset={onResetHold}
-            />
+            {isTransitioning ? (
+              <CooldownTransitionBox
+                secondsLeft={state.cooldownTransitionLeft ?? COOLDOWN_TRANSITION_SECONDS}
+                totalSeconds={COOLDOWN_TRANSITION_SECONDS}
+                isPaused={state.isCooldownTransitionPaused}
+                nextExerciseName={
+                  nextCooldownExercise?.exercise.name ?? "Próximo alongamento"
+                }
+                nextExerciseCues={nextCooldownExercise?.exercise.cues}
+                isNextLast={isNextLast}
+                onStartNow={() => advanceCooldown(true)}
+                onTogglePause={togglePauseCooldownTransition}
+              />
+            ) : (
+              <HoldTimerBox
+                holdLeft={state.holdLeft ?? targetSec}
+                holdTotal={state.holdTotal ?? targetSec}
+                isRunning={state.isHoldRunning}
+                isCompleted={state.holdCompleted}
+                label="Iniciar alongamento"
+                onStart={onStartHold}
+                onPause={onPauseHold}
+                onReset={onResetHold}
+              />
+            )}
+
+            {isLast && state.holdCompleted && (
+              <div className="surface-card rounded-2xl p-4 lg:p-5 border border-accent/40 bg-accent-soft/30 dark:bg-accent-soft/20 animate-fade-up">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
+                    <CheckCircleIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-display font-semibold text-accent">
+                      Alongamentos concluídos!
+                    </p>
+                    <p className="text-xs text-muted lg:text-sm">
+                      Treino e recuperação finalizados. Clique abaixo para salvar no seu histórico.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <p className="text-sm leading-relaxed text-muted lg:text-base">
               {cooldownCurrent.exercise.cues}
@@ -934,10 +1175,28 @@ export function WorkoutSession({ workout, exercises }: Props) {
             </p>
 
             <div className="mt-4 flex flex-col gap-3 lg:mt-auto">
-              {state.isHoldRunning || state.holdCompleted ? (
+              {isTransitioning ? (
                 <button
                   type="button"
-                  onClick={advanceCooldown}
+                  onClick={() => advanceCooldown(true)}
+                  className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
+                >
+                  <PlayIcon className="h-4 w-4" />
+                  Iniciar próximo alongamento agora
+                </button>
+              ) : isLast && state.holdCompleted ? (
+                <button
+                  type="button"
+                  onClick={() => advanceCooldown(false)}
+                  className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+                >
+                  <CheckCircleIcon className="h-5 w-5" />
+                  Concluir treino
+                </button>
+              ) : state.isHoldRunning || state.holdCompleted ? (
+                <button
+                  type="button"
+                  onClick={() => advanceCooldown(true)}
                   className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
                 >
                   {isLast ? "Concluir treino" : "Próximo alongamento"}
@@ -945,7 +1204,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={advanceCooldown}
+                  onClick={() => advanceCooldown(false)}
                   className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
                 >
                   {isLast ? "Pular e concluir treino" : "Pular para o próximo alongamento"}

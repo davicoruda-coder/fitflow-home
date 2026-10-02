@@ -74,6 +74,12 @@ export function signalRestStart() {
   beep(440, 140, 0.07);
 }
 
+export function signalCountdownTick(secondsLeft?: number) {
+  const freq = secondsLeft === 1 ? 660 : 540;
+  beep(freq, 70, 0.05);
+  vibrate(15);
+}
+
 export const TIMER_REPEATS_STORAGE_KEY = "fitflow-timer-repeats";
 export type TimerRepeatCount = 1 | 2 | 3;
 export const DEFAULT_TIMER_REPEATS: TimerRepeatCount = 3;
