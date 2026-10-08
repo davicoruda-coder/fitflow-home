@@ -533,23 +533,23 @@ function CooldownTransitionBox({
   const percent = Math.max(0, Math.min(100, (secondsLeft / totalSeconds) * 100));
 
   return (
-    <div className="surface-card rounded-2xl p-4 lg:p-5 border-2 border-energy/40 bg-energy-soft/25 dark:bg-energy-soft/15 shadow-sm animate-fade-up">
+    <div className="surface-card rounded-2xl p-3.5 sm:p-4 lg:p-5 border-2 border-energy/40 bg-energy-soft/25 dark:bg-energy-soft/15 shadow-sm animate-fade-up">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-energy text-white font-display text-3xl font-bold tabular-nums shadow-sm animate-pulse-rest">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-energy text-white font-display text-2xl font-bold tabular-nums shadow-sm animate-pulse-rest">
             {secondsLeft}
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-energy">
               {isNextLast ? "Último alongamento em..." : "Próximo alongamento em..."}
             </p>
-            <p className="font-display text-lg font-semibold leading-snug lg:text-xl text-foreground">
+            <p className="font-display text-base font-semibold leading-snug lg:text-lg text-foreground line-clamp-1">
               {nextExerciseName}
             </p>
           </div>
         </div>
 
-        <span className="chip-energy inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
+        <span className="chip-energy inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold">
           <span
             className={`inline-block h-2 w-2 rounded-full bg-energy ${
               isPaused ? "" : "animate-ping"
@@ -559,7 +559,7 @@ function CooldownTransitionBox({
         </span>
       </div>
 
-      <div className="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-line/50">
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-line/50">
         <div
           className="h-full bg-energy transition-all duration-300"
           style={{ width: `${percent}%` }}
@@ -567,23 +567,23 @@ function CooldownTransitionBox({
       </div>
 
       {nextExerciseCues && (
-        <p className="mt-2.5 text-xs text-muted leading-relaxed lg:text-sm">
+        <p className="mt-2 text-xs text-muted leading-relaxed">
           <strong className="text-foreground">Dica: </strong>
           {nextExerciseCues}
         </p>
       )}
 
-      <p className="mt-2 text-xs text-muted">
+      <p className="mt-1.5 text-xs text-muted">
         {isPaused
           ? "Contagem pausada. Posicione-se e clique em continuar ou iniciar agora."
           : "Troque de postura e prepare-se. O temporizador iniciará automaticamente."}
       </p>
 
-      <div className="mt-3.5 flex items-center gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <button
           type="button"
           onClick={onStartNow}
-          className="btn-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold shadow-sm transition-transform active:scale-[0.98]"
+          className="btn-primary inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-transform active:scale-[0.98]"
         >
           <PlayIcon className="h-4 w-4" />
           Iniciar agora
@@ -592,10 +592,10 @@ function CooldownTransitionBox({
         <button
           type="button"
           onClick={onTogglePause}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line bg-elevated px-4 text-sm font-semibold hover:border-foreground/30 transition-transform active:scale-[0.98]"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-elevated px-4 text-sm font-semibold hover:border-foreground/30 transition-transform active:scale-[0.98]"
         >
           {isPaused ? <PlayIcon className="h-4 w-4" /> : <PauseIcon className="h-4 w-4" />}
-          {isPaused ? "Continuar contagem" : "Pausar contagem"}
+          {isPaused ? "Continuar" : "Pausar"}
         </button>
       </div>
     </div>
@@ -1006,8 +1006,8 @@ export function WorkoutSession({ workout, exercises }: Props) {
     const targetSec = warmup.target_seconds ?? WARMUP_SECONDS;
 
     return (
-      <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-8 pt-4 lg:max-w-3xl lg:px-8 lg:py-8">
-        <header className="mb-4 flex items-center justify-between gap-3">
+      <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-6 pt-3 lg:max-w-3xl lg:px-8 lg:py-8">
+        <header className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-energy">
               Aquecimento
@@ -1023,18 +1023,21 @@ export function WorkoutSession({ workout, exercises }: Props) {
 
         <div className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-8">
           <ExerciseMedia
+            key={warmup.exercise.id}
             src={warmup.exercise.image_url || warmup.exercise.thumbnail_url}
             videoSrc={warmup.exercise.video_url}
             alt={warmup.exercise.name}
             priority
-            className="mb-4 w-full rounded-3xl shadow-sm lg:mb-0"
+            className="mb-3 w-full rounded-3xl shadow-sm lg:mb-0"
           />
 
           <div className="flex flex-1 flex-col gap-3">
-            <h1 className="font-display text-2xl font-semibold leading-tight lg:text-3xl">
-              {warmup.exercise.name}
-            </h1>
-            <p className="text-lg font-semibold text-accent">Meta: {warmupMeta}</p>
+            <div>
+              <h1 className="font-display text-2xl font-semibold leading-tight lg:text-3xl">
+                {warmup.exercise.name}
+              </h1>
+              <p className="text-base font-semibold text-accent mt-0.5">Meta: {warmupMeta}</p>
+            </div>
 
             <HoldTimerBox
               holdLeft={state.holdLeft ?? targetSec}
@@ -1047,19 +1050,13 @@ export function WorkoutSession({ workout, exercises }: Props) {
               onReset={onResetHold}
             />
 
-            <p className="text-sm leading-relaxed text-muted lg:text-base">
-              {warmup.exercise.cues}
-            </p>
-            <p className="text-sm text-muted">
-              O circuito de 15 min começa depois. Você pode avançar quando terminar ou pular direto.
-            </p>
-
-            <div className="mt-4 flex flex-col gap-3 lg:mt-auto">
+            {/* Ação principal posicionada mais em cima para evitar rolagem */}
+            <div className="flex flex-col gap-2">
               {state.isHoldRunning || state.holdCompleted ? (
                 <button
                   type="button"
                   onClick={startCircuit}
-                  className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
+                  className="min-h-13 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
                 >
                   Começar circuito
                 </button>
@@ -1067,12 +1064,22 @@ export function WorkoutSession({ workout, exercises }: Props) {
                 <button
                   type="button"
                   onClick={startCircuit}
-                  className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
+                  className="min-h-11 text-sm font-semibold text-muted underline-offset-4 hover:underline"
                 >
                   Pular aquecimento e começar circuito
                 </button>
               )}
             </div>
+
+            {warmup.exercise.cues && (
+              <p className="text-xs leading-relaxed text-muted lg:text-sm">
+                <strong className="text-foreground">Dica: </strong>
+                {warmup.exercise.cues}
+              </p>
+            )}
+            <p className="text-xs text-muted/80">
+              O circuito de 15 min começa depois. Você pode avançar quando terminar ou pular direto.
+            </p>
           </div>
         </div>
       </div>
@@ -1080,22 +1087,33 @@ export function WorkoutSession({ workout, exercises }: Props) {
   }
 
   if (state.phase === "cooldown" && cooldownCurrent) {
-    const targetSec = cooldownCurrent.target_seconds ?? 30;
-    const meta = `${targetSec}s`;
     const isLast = state.cooldownIndex >= cooldown.length - 1;
     const nextCooldownExercise = cooldown[state.cooldownIndex + 1];
     const isNextLast = state.cooldownIndex + 1 >= cooldown.length - 1;
     const isTransitioning =
       state.cooldownTransitionLeft != null && state.cooldownTransitionLeft >= 0;
 
+    // Durante a contagem regressiva, exibe a imagem/vídeo e dados do PRÓXIMO alongamento
+    const displayedCooldownItem =
+      isTransitioning && nextCooldownExercise
+        ? nextCooldownExercise
+        : cooldownCurrent;
+
+    const targetSec = displayedCooldownItem.target_seconds ?? 30;
+    const meta = `${targetSec}s`;
+
     return (
-      <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-8 pt-4 lg:max-w-3xl lg:px-8 lg:py-8">
-        <header className="mb-4 flex items-center justify-between gap-3">
+      <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-6 pt-3 lg:max-w-3xl lg:px-8 lg:py-8">
+        <header className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-energy">
-              Alongamento final
+              {isTransitioning ? "Próximo alongamento" : "Alongamento final"}
             </p>
-            <p className="text-sm text-muted">{progressLabel}</p>
+            <p className="text-sm text-muted">
+              {isTransitioning
+                ? `Transição · ${state.cooldownIndex + 2}/${cooldown.length}`
+                : progressLabel}
+            </p>
           </div>
           <div className="rounded-2xl border border-line bg-elevated px-4 py-2 text-center">
             <p className="font-display text-xl font-semibold tabular-nums text-muted">
@@ -1106,123 +1124,154 @@ export function WorkoutSession({ workout, exercises }: Props) {
 
         <div className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-8">
           <ExerciseMedia
+            key={displayedCooldownItem.exercise.id}
             src={
-              cooldownCurrent.exercise.image_url ||
-              cooldownCurrent.exercise.thumbnail_url
+              displayedCooldownItem.exercise.image_url ||
+              displayedCooldownItem.exercise.thumbnail_url
             }
-            videoSrc={cooldownCurrent.exercise.video_url}
-            alt={cooldownCurrent.exercise.name}
+            videoSrc={displayedCooldownItem.exercise.video_url}
+            alt={displayedCooldownItem.exercise.name}
             priority
-            className="mb-4 w-full rounded-3xl shadow-sm lg:mb-0"
+            badge={
+              isTransitioning ? (
+                <span className="chip-energy inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-energy animate-ping" />
+                  {isNextLast ? "A seguir (último)" : "A seguir"}
+                </span>
+              ) : undefined
+            }
+            className="mb-3 w-full rounded-3xl shadow-sm lg:mb-0"
           />
 
           <div className="flex flex-1 flex-col gap-3">
-            <h1 className="font-display text-2xl font-semibold leading-tight lg:text-3xl">
-              {cooldownCurrent.exercise.name}
-            </h1>
-            <p className="text-lg font-semibold text-accent">Meta: {meta}</p>
+            <div>
+              {isTransitioning && (
+                <p className="text-xs font-semibold uppercase tracking-wider text-energy mb-0.5">
+                  {isNextLast ? "Último alongamento em..." : "Próximo alongamento em..."}
+                </p>
+              )}
+              <h1 className="font-display text-2xl font-semibold leading-tight lg:text-3xl">
+                {displayedCooldownItem.exercise.name}
+              </h1>
+              <p className="text-base font-semibold text-accent mt-0.5">Meta: {meta}</p>
+            </div>
 
             {isTransitioning ? (
-              <CooldownTransitionBox
-                secondsLeft={state.cooldownTransitionLeft ?? COOLDOWN_TRANSITION_SECONDS}
-                totalSeconds={COOLDOWN_TRANSITION_SECONDS}
-                isPaused={state.isCooldownTransitionPaused}
-                nextExerciseName={
-                  nextCooldownExercise?.exercise.name ?? "Próximo alongamento"
-                }
-                nextExerciseCues={nextCooldownExercise?.exercise.cues}
-                isNextLast={isNextLast}
-                onStartNow={() => advanceCooldown(true)}
-                onTogglePause={togglePauseCooldownTransition}
-              />
-            ) : (
-              <HoldTimerBox
-                holdLeft={state.holdLeft ?? targetSec}
-                holdTotal={state.holdTotal ?? targetSec}
-                isRunning={state.isHoldRunning}
-                isCompleted={state.holdCompleted}
-                label="Iniciar alongamento"
-                onStart={onStartHold}
-                onPause={onPauseHold}
-                onReset={onResetHold}
-              />
-            )}
+              <>
+                <CooldownTransitionBox
+                  secondsLeft={state.cooldownTransitionLeft ?? COOLDOWN_TRANSITION_SECONDS}
+                  totalSeconds={COOLDOWN_TRANSITION_SECONDS}
+                  isPaused={state.isCooldownTransitionPaused}
+                  nextExerciseName={
+                    nextCooldownExercise?.exercise.name ?? "Próximo alongamento"
+                  }
+                  nextExerciseCues={nextCooldownExercise?.exercise.cues}
+                  isNextLast={isNextLast}
+                  onStartNow={() => advanceCooldown(true)}
+                  onTogglePause={togglePauseCooldownTransition}
+                />
 
-            {isLast && state.holdCompleted && (
-              <div className="surface-card rounded-2xl p-4 lg:p-5 border border-accent/40 bg-accent-soft/30 dark:bg-accent-soft/20 animate-fade-up">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
-                    <CheckCircleIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-display font-semibold text-accent">
-                      Alongamentos concluídos!
-                    </p>
-                    <p className="text-xs text-muted lg:text-sm">
-                      Treino e recuperação finalizados. Clique abaixo para salvar no seu histórico.
-                    </p>
-                  </div>
+                <div className="pt-1">
+                  <ConfirmAction
+                    triggerLabel="Pular alongamento e salvar"
+                    title="Pular o alongamento?"
+                    description="O treino será salvo agora. O alongamento final ajuda peito, coluna e quadril."
+                    confirmLabel="Sim, pular e salvar"
+                    busyLabel="Salvando…"
+                    variant="caution"
+                    onConfirm={() =>
+                      finish(circuitElapsedRef.current || circuitElapsedSeconds())
+                    }
+                  />
                 </div>
-              </div>
+              </>
+            ) : (
+              <>
+                <HoldTimerBox
+                  holdLeft={state.holdLeft ?? targetSec}
+                  holdTotal={state.holdTotal ?? targetSec}
+                  isRunning={state.isHoldRunning}
+                  isCompleted={state.holdCompleted}
+                  label="Iniciar alongamento"
+                  onStart={onStartHold}
+                  onPause={onPauseHold}
+                  onReset={onResetHold}
+                />
+
+                {isLast && state.holdCompleted && (
+                  <div className="surface-card rounded-2xl p-3.5 border border-accent/40 bg-accent-soft/30 dark:bg-accent-soft/20 animate-fade-up">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
+                        <CheckCircleIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-display font-semibold text-accent leading-snug">
+                          Alongamentos concluídos!
+                        </p>
+                        <p className="text-xs text-muted">
+                          Treino e recuperação finalizados.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* BOTÕES DE AÇÃO: posicionados BEM EM CIMA, logo após o cronômetro/conclusão */}
+                <div className="flex flex-col gap-2">
+                  {isLast && state.holdCompleted ? (
+                    <button
+                      type="button"
+                      onClick={() => advanceCooldown(false)}
+                      className="min-h-13 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+                    >
+                      <CheckCircleIcon className="h-5 w-5" />
+                      Concluir treino
+                    </button>
+                  ) : state.isHoldRunning || state.holdCompleted ? (
+                    <button
+                      type="button"
+                      onClick={() => advanceCooldown(true)}
+                      className="min-h-13 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+                    >
+                      {isLast ? "Concluir treino" : "Próximo alongamento"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => advanceCooldown(false)}
+                      className="min-h-11 text-sm font-semibold text-muted underline-offset-4 hover:underline"
+                    >
+                      {isLast ? "Pular e concluir treino" : "Pular para o próximo alongamento"}
+                    </button>
+                  )}
+                </div>
+
+                {cooldownCurrent.exercise.cues && (
+                  <p className="text-xs leading-relaxed text-muted lg:text-sm">
+                    <strong className="text-foreground">Dica: </strong>
+                    {cooldownCurrent.exercise.cues}
+                  </p>
+                )}
+
+                <p className="text-xs text-muted/80">
+                  Fora do timer de 15 min. Ajuda peito, coluna e quadril após o circuito.
+                </p>
+
+                <div className="pt-1">
+                  <ConfirmAction
+                    triggerLabel="Pular alongamento e salvar"
+                    title="Pular o alongamento?"
+                    description="O treino será salvo agora. O alongamento final ajuda peito, coluna e quadril."
+                    confirmLabel="Sim, pular e salvar"
+                    busyLabel="Salvando…"
+                    variant="caution"
+                    onConfirm={() =>
+                      finish(circuitElapsedRef.current || circuitElapsedSeconds())
+                    }
+                  />
+                </div>
+              </>
             )}
-
-            <p className="text-sm leading-relaxed text-muted lg:text-base">
-              {cooldownCurrent.exercise.cues}
-            </p>
-            <p className="text-sm text-muted">
-              Fora do timer de 15 min. Ajuda peito, coluna e quadril após o
-              circuito.
-            </p>
-
-            <div className="mt-4 flex flex-col gap-3 lg:mt-auto">
-              {isTransitioning ? (
-                <button
-                  type="button"
-                  onClick={() => advanceCooldown(true)}
-                  className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
-                >
-                  <PlayIcon className="h-4 w-4" />
-                  Iniciar próximo alongamento agora
-                </button>
-              ) : isLast && state.holdCompleted ? (
-                <button
-                  type="button"
-                  onClick={() => advanceCooldown(false)}
-                  className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
-                >
-                  <CheckCircleIcon className="h-5 w-5" />
-                  Concluir treino
-                </button>
-              ) : state.isHoldRunning || state.holdCompleted ? (
-                <button
-                  type="button"
-                  onClick={() => advanceCooldown(true)}
-                  className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
-                >
-                  {isLast ? "Concluir treino" : "Próximo alongamento"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => advanceCooldown(false)}
-                  className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
-                >
-                  {isLast ? "Pular e concluir treino" : "Pular para o próximo alongamento"}
-                </button>
-              )}
-
-              <ConfirmAction
-                triggerLabel="Pular alongamento e salvar"
-                title="Pular o alongamento?"
-                description="O treino será salvo agora. O alongamento final ajuda peito, coluna e quadril."
-                confirmLabel="Sim, pular e salvar"
-                busyLabel="Salvando…"
-                variant="caution"
-                onConfirm={() =>
-                  finish(circuitElapsedRef.current || circuitElapsedSeconds())
-                }
-              />
-            </div>
           </div>
         </div>
       </div>
@@ -1251,8 +1300,8 @@ export function WorkoutSession({ workout, exercises }: Props) {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-8 pt-4 lg:max-w-3xl lg:px-8 lg:py-8">
-      <header className="mb-4 flex items-center justify-between gap-3">
+    <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-6 pt-3 lg:max-w-3xl lg:px-8 lg:py-8">
+      <header className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">
             Treino {workout.code}
@@ -1274,7 +1323,7 @@ export function WorkoutSession({ workout, exercises }: Props) {
 
       {/* Global 15-minute time completed banner */}
       {isGlobalTimeOver && (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-energy/40 bg-energy-soft/90 p-3.5 text-sm text-energy shadow-sm animate-fade-up">
+        <div className="mb-3 flex items-center gap-3 rounded-2xl border border-energy/40 bg-energy-soft/90 p-3 text-sm text-energy shadow-sm animate-fade-up">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-energy text-white">
             <CheckCircleIcon className="h-4 w-4" />
           </div>
@@ -1289,18 +1338,21 @@ export function WorkoutSession({ workout, exercises }: Props) {
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-8">
         <ExerciseMedia
+          key={current.exercise.id}
           src={current.exercise.image_url || current.exercise.thumbnail_url}
           videoSrc={current.exercise.video_url}
           alt={current.exercise.name}
           priority
-          className="mb-4 w-full rounded-3xl shadow-sm lg:mb-0"
+          className="mb-3 w-full rounded-3xl shadow-sm lg:mb-0"
         />
 
         <div className="flex flex-1 flex-col gap-3">
-          <h1 className="font-display text-2xl font-semibold leading-tight lg:text-3xl">
-            {current.exercise.name}
-          </h1>
-          <p className="text-lg font-semibold text-accent">Meta: {meta}</p>
+          <div>
+            <h1 className="font-display text-2xl font-semibold leading-tight lg:text-3xl">
+              {current.exercise.name}
+            </h1>
+            <p className="text-base font-semibold text-accent mt-0.5">Meta: {meta}</p>
+          </div>
 
           {isTimedHold && (
             <HoldTimerBox
@@ -1315,17 +1367,13 @@ export function WorkoutSession({ workout, exercises }: Props) {
             />
           )}
 
-          <p className="text-sm leading-relaxed text-muted lg:text-base">
-            {current.exercise.cues}
-          </p>
-          {state.error && <ErrorBanner message={state.error} />}
-
-          <div className="mt-4 flex flex-col gap-3 lg:mt-auto">
+          {/* BOTÃO PRINCIPAL DE AVANÇAR: colocado logo acima das dicas para evitar rolagem */}
+          <div className="flex flex-col gap-2">
             {isTimedHold && !state.isHoldRunning && !state.holdCompleted ? (
               <button
                 type="button"
                 onClick={onNext}
-                className="min-h-12 text-sm font-semibold text-muted underline-offset-4 hover:underline"
+                className="min-h-11 text-sm font-semibold text-muted underline-offset-4 hover:underline"
               >
                 {nextButtonLabel} (sem cronometrar)
               </button>
@@ -1333,12 +1381,22 @@ export function WorkoutSession({ workout, exercises }: Props) {
               <button
                 type="button"
                 onClick={onNext}
-                className="min-h-14 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2"
+                className="min-h-13 rounded-2xl btn-primary px-6 text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
               >
                 {nextButtonLabel}
               </button>
             )}
+          </div>
 
+          {current.exercise.cues && (
+            <p className="text-xs leading-relaxed text-muted lg:text-sm">
+              <strong className="text-foreground">Dica: </strong>
+              {current.exercise.cues}
+            </p>
+          )}
+          {state.error && <ErrorBanner message={state.error} />}
+
+          <div className="pt-1 lg:mt-auto">
             <ConfirmAction
               triggerLabel="Encerrar e salvar"
               title="Encerrar o treino agora?"

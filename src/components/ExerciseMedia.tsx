@@ -12,6 +12,8 @@ type Props = {
   sizes?: string;
   /** Thumbnail lists: skip video entirely */
   thumb?: boolean;
+  aspectRatio?: string;
+  badge?: React.ReactNode;
 };
 
 function ExerciseMediaInner({
@@ -22,15 +24,20 @@ function ExerciseMediaInner({
   className = "",
   sizes = "(max-width: 768px) 100vw, 480px",
   thumb = false,
+  aspectRatio,
+  badge,
 }: Props) {
   const [videoFailed, setVideoFailed] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [prevMediaKey, setPrevMediaKey] = useState(`${src ?? ""}|${videoSrc ?? ""}`);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  useEffect(() => {
+  const currentMediaKey = `${src ?? ""}|${videoSrc ?? ""}`;
+  if (prevMediaKey !== currentMediaKey) {
+    setPrevMediaKey(currentMediaKey);
     setVideoFailed(false);
     setImageFailed(false);
-  }, [src, videoSrc]);
+  }
 
   useEffect(() => {
     const el = videoRef.current;
@@ -51,9 +58,16 @@ function ExerciseMediaInner({
 
   return (
     <div
-      className={`relative overflow-hidden bg-accent-soft ${className}`}
-      style={{ aspectRatio: "1 / 1" }}
+      className={`relative overflow-hidden bg-accent-soft ${
+        aspectRatio
+          ? ""
+          : "aspect-[16/10] sm:aspect-[4/3] lg:aspect-square max-h-[220px] sm:max-h-[280px] lg:max-h-none"
+      } ${className}`}
+      style={aspectRatio ? { aspectRatio } : undefined}
     >
+      {badge ? (
+        <div className="absolute left-3 top-3 z-10 pointer-events-none">{badge}</div>
+      ) : null}
       {showVideo && videoSrc ? (
         <video
           ref={videoRef}
